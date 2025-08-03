@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,7 @@ export interface Task {
     fileDataUrl?: string; // Add this to store the base64 URL
   };
   date: string; // YYYY-MM-DD
+  isDefault?: boolean;
 }
 
 interface TaskContextType {
@@ -30,6 +31,8 @@ interface TaskContextType {
   addTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   completeTask: (taskId: string) => void;
+  defaultTasks: Task[];
+  addDefaultTask: (task: Task) => void;
   isTaskModalOpen: boolean;
   setTaskModalOpen: (isOpen: boolean) => void;
   closeTaskModal: () => void;
@@ -114,12 +117,30 @@ const initialTasks: Task[] = [
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [defaultTasks, setDefaultTasks] = useState<Task[]>([]);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    try {
+      const savedDefaultTasks = localStorage.getItem('defaultTasks');
+      if (savedDefaultTasks) {
+        setDefaultTasks(JSON.parse(savedDefaultTasks));
+      }
+    } catch (error) {
+      console.error("Failed to parse default tasks from localStorage", error);
+    }
+  }, []);
 
   const addTask = (task: Task) => {
     setTasks((prevTasks) => [...prevTasks, task]);
+  };
+  
+  const addDefaultTask = (task: Task) => {
+    const newDefaultTasks = [...defaultTasks, task];
+    setDefaultTasks(newDefaultTasks);
+    localStorage.setItem('defaultTasks', JSON.stringify(newDefaultTasks));
   };
 
   const deleteTask = (taskId: string) => {
@@ -138,12 +159,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     );
     toast({
         title: "Task Completed!",
-        description: "Yup you completed your task buddy keep it up we both concur the world if you stay regular and in constant towards your task",
+        description: "Great job! Your forest is growing thanks to your hard work.",
     });
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
+    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, defaultTasks, addDefaultTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
       {children}
     </TaskContext.Provider>
   );
@@ -156,3 +177,5 @@ export function useTasks() {
   }
   return context;
 }
+
+    

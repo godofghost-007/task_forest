@@ -7,7 +7,7 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward } from 'lucide-react';
+import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward, Coffee } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { AppLayout } from '@/components/layout/app-layout';
 
@@ -17,41 +17,48 @@ function formatTime(seconds: number) {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+type SessionType = 'work' | 'shortBreak' | 'longBreak';
+
 export default function TaskSessionPage() {
   const router = useRouter();
   const params = useParams();
   const { tasks, completeTask } = useTasks();
   const [task, setTask] = React.useState<Task | null>(null);
+
+  // Pomodoro State
+  const [sessionType, setSessionType] = React.useState<SessionType>('work');
   const [timeLeft, setTimeLeft] = React.useState(0);
+  const [isActive, setIsActive] = React.useState(false);
+  const [pomodoroCount, setPomodoroCount] = React.useState(0);
+
   const [isSessionCompleted, setIsSessionCompleted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(true);
+
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
 
   const taskId = params.taskId as string;
   
-  const initialDuration = React.useMemo(() => {
-    const currentTask = tasks.find((t) => t.id === taskId);
-    return (currentTask?.duration || 0) * 60;
-  }, [taskId, tasks]);
+  const durations = React.useMemo(() => {
+    const workDuration = task?.duration || 25;
+    return {
+        work: workDuration * 60,
+        shortBreak: 5 * 60,
+        longBreak: 15 * 60,
+    }
+  }, [task?.duration]);
 
 
   React.useEffect(() => {
     const currentTask = tasks.find((t) => t.id === taskId);
     if (currentTask) {
       setTask(currentTask);
-      const initialTime = (currentTask.duration || 0) * 60;
+      const initialTime = (currentTask.duration || 25) * 60;
       setTimeLeft(initialTime);
       
       if (currentTask.completed) {
         setIsSessionCompleted(true);
-        setIsPaused(true);
-      } else {
-        setIsPaused(false); // Auto-start timer
-        if (currentTask.music) {
-            setIsAudioPlaying(true);
-        }
+        setIsActive(false);
       }
       
       if (currentTask.music) {
@@ -68,23 +75,32 @@ export default function TaskSessionPage() {
   }, [taskId, tasks, router]);
 
   React.useEffect(() => {
-    if (timeLeft <= 0 && task && !task.completed) {
-      setIsSessionCompleted(true);
-      setIsPaused(true);
-      setIsAudioPlaying(false); // Stop music
-      return;
+    let timerId: NodeJS.Timeout | undefined;
+    
+    if (isActive && timeLeft > 0) {
+      timerId = setInterval(() => {
+        setTimeLeft((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isActive) {
+      // Timer finished
+      setIsActive(false);
+      if (sessionType === 'work') {
+        setIsSessionCompleted(true);
+        setPomodoroCount(prev => prev + 1);
+        // Logic for next session
+        const nextSession: SessionType = pomodoroCount > 0 && pomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
+        setSessionType(nextSession);
+        setTimeLeft(durations[nextSession]);
+
+      } else { // Break finished
+        setSessionType('work');
+        setTimeLeft(durations.work);
+      }
+      // Optionally play a sound
     }
 
-    if (!task || task.completed || isPaused) {
-        return;
-    };
-
-    const timerId = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
-
     return () => clearInterval(timerId);
-  }, [task, timeLeft, isPaused]);
+  }, [isActive, timeLeft, sessionType, pomodoroCount, durations]);
 
   React.useEffect(() => {
     if (audioRef.current) {
@@ -104,23 +120,24 @@ export default function TaskSessionPage() {
     router.push('/');
   };
 
+  const handleToggleTimer = () => {
+    if (!task?.completed) {
+        setIsActive(!isActive);
+        if (task?.music) {
+            setIsAudioPlaying(!isActive);
+        }
+    }
+  };
+
   const handleResetTimer = () => {
-    setTimeLeft(initialDuration);
-    setIsPaused(true);
+    setIsActive(false);
+    setSessionType('work');
+    setTimeLeft(durations.work);
     if(audioRef.current) {
         audioRef.current.currentTime = 0;
         setIsAudioPlaying(false);
     }
   };
-  
-  const handleTogglePause = () => {
-    if (!task?.completed && !isSessionCompleted) {
-       setIsPaused(!isPaused);
-       if (task?.music) {
-        setIsAudioPlaying(!isPaused);
-       }
-    }
-  }
 
   const handleAudioPlayPause = () => {
     setIsAudioPlaying(!isAudioPlaying);
@@ -132,18 +149,20 @@ export default function TaskSessionPage() {
     }
   };
 
-  const handleAudioReset = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-    }
-  };
-
   if (!task) {
     return <AppLayout><div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div></AppLayout>;
   }
   
-  const progress = initialDuration > 0 ? (initialDuration - timeLeft) / initialDuration : 0;
+  const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
   
+  const getSessionTitle = () => {
+    switch (sessionType) {
+        case 'work': return task.title;
+        case 'shortBreak': return 'Short Break';
+        case 'longBreak': return 'Long Break';
+    }
+  }
+
   return (
     <AppLayout>
       <div className="relative h-dvh w-full">
@@ -157,24 +176,24 @@ export default function TaskSessionPage() {
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
           
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
-             <PlantGrowth progress={progress} />
+             <PlantGrowth progress={sessionType === 'work' ? progress : 0} />
           </div>
 
 
           <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
             <CardContent className="p-6 text-center flex flex-col items-center justify-center">
-              <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
-              <p className="text-white/80">{task.subtitle}</p>
+              <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{getSessionTitle()}</h1>
+              {sessionType === 'work' && <p className="text-white/80">{task.subtitle}</p>}
               
               <div className="my-4 flex items-center justify-center gap-2 text-6xl font-bold font-mono">
-                  <Timer className="h-12 w-12" />
+                  {sessionType === 'work' ? <Timer className="h-12 w-12" /> : <Coffee className="h-12 w-12" />}
                   <span>{formatTime(timeLeft)}</span>
               </div>
               
               {!isSessionCompleted && !task.completed && (
                   <div className="flex justify-center gap-4 mb-4">
-                      <Button variant="ghost" size="icon" onClick={handleTogglePause} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
-                          {isPaused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+                      <Button variant="ghost" size="icon" onClick={handleToggleTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                          {isActive ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
                       </Button>
                       <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
                           <RotateCcw className="h-7 w-7" />
@@ -202,7 +221,7 @@ export default function TaskSessionPage() {
                   </div>
               )}
 
-              {task.music && musicUrl && (
+              {task.music && musicUrl && sessionType === 'work' && (
                   <div className="mt-2 text-white/70">
                       <div className="flex items-center justify-center gap-2">
                           <Music className="h-4 w-4" />
@@ -215,7 +234,7 @@ export default function TaskSessionPage() {
                           <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
                              {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={handleAudioReset}>
+                          <Button variant="ghost" size="icon" onClick={handleResetTimer}>
                              <RotateCcw className="h-5 w-5" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
@@ -239,3 +258,5 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
+
+    

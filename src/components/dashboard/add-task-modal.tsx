@@ -28,6 +28,7 @@ import {
   Music,
   BookOpen,
   CalendarIcon,
+  Star,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
@@ -36,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
 
 
 const healthTasks = [
@@ -79,6 +81,7 @@ const iconMap: { [key: string]: React.ElementType } = {
   Pencil,
   Check,
   BookOpen,
+  Star,
 };
 
 import { Label } from '../ui/label';
@@ -358,13 +361,14 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 
 
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
-  const { addTask, selectedDate } = useTasks();
+  const { addTask, addDefaultTask, selectedDate } = useTasks();
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
   const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
+  const [isDefault, setIsDefault] = useState(false);
 
   const handleAddTask = () => {
     if (title.trim()) {
@@ -377,7 +381,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
             fileDataUrl: localFile.dataUrl,
         };
       }
-      addTask({
+      const newTask: Task = {
         id: Date.now().toString(),
         title: title.toUpperCase(),
         subtitle: `${duration} min`,
@@ -388,7 +392,14 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         music: musicData,
         showPlay: !!musicData,
         date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
-      });
+      };
+
+      addTask(newTask);
+
+      if (isDefault) {
+        addDefaultTask({ ...newTask, isDefault: true, id: `default-${Date.now()}` });
+      }
+
       setTitle('');
       onClose();
     }
@@ -508,6 +519,18 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
           </div>
         </div>
 
+      <div className="flex items-center justify-between rounded-lg p-3 bg-white/10">
+        <div>
+          <Label htmlFor="default-task" className="font-medium">Set as Default Task</Label>
+          <p className="text-xs text-white/70">Add to your list of quick-add tasks.</p>
+        </div>
+        <Switch
+          id="default-task"
+          checked={isDefault}
+          onCheckedChange={setIsDefault}
+        />
+      </div>
+
       <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
           <Plus className="h-5 w-5 mr-2" />
           Add Custom Task
@@ -516,7 +539,9 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   );
 }
 
-function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void, onMusicClick: (task: Partial<Task>) => void }) {
+function DefaultView({ onCustomClick, onDetailsClick, onMusicClick, onClose }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void, onMusicClick: (task: Partial<Task>) => void, onClose: () => void }) {
+  const { defaultTasks, addTask, selectedDate } = useTasks();
+
   const getIconName = (IconComponent: React.ElementType) => {
     if (typeof IconComponent !== 'string') {
         const iconName = Object.keys(iconMap).find(key => iconMap[key] === IconComponent);
@@ -541,8 +566,13 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
     });
   }
 
+  const handleDefaultTaskClick = (task: Task) => {
+    addTask({ ...task, id: Date.now().toString(), date: selectedDate, completed: false, streak: 0 });
+    onClose();
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
        <div className="space-y-4">
         <p className="text-center text-xs text-white/70">
           Add a new health task or create a custom one.
@@ -552,6 +582,30 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
           <Pencil className="mr-2 h-4 w-4" />
           Create a Custom Task
         </Button>
+        
+        {defaultTasks.length > 0 && (
+          <>
+            <h3 className="font-headline font-semibold text-white pt-4">
+              YOUR DEFAULT TASKS:
+            </h3>
+             <div className="space-y-2">
+              {defaultTasks.map((task) => {
+                const Icon = iconMap[task.icon] || Pencil;
+                return (
+                  <button
+                    key={task.id}
+                    className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10"
+                    onClick={() => handleDefaultTaskClick(task)}
+                  >
+                    <Icon />
+                    <span className="flex-1 font-medium">{task.title.toUpperCase()}</span>
+                    <ChevronRight className="h-5 w-5 text-white/50" />
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
 
 
         <h3 className="font-headline font-semibold text-white pt-4">
@@ -642,7 +696,7 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
           </div>
         </DialogHeader>
 
-        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} onDetailsClick={handleDetailsClick} onMusicClick={handleMusicClick} />}
+        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} onDetailsClick={handleDetailsClick} onMusicClick={handleMusicClick} onClose={handleClose} />}
         {view === 'custom' && <CustomTaskView onBack={handleBack} onClose={handleClose} />}
         {view === 'details' && selectedTask && <DetailsView task={selectedTask} onBack={handleBack} onClose={handleClose} />}
         {view === 'musicSelection' && selectedTask && <MusicSelectionView task={selectedTask} onBack={handleBack} onClose={handleClose} />}
@@ -650,3 +704,5 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
+    
