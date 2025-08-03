@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/layout/app-sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { TaskProvider } from '@/context/task-context';
 import { ThemeProvider } from '@/context/theme-context';
+import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
   title: 'Task Forest',
@@ -33,14 +34,16 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased')}>
         <ThemeProvider>
-          <TaskProvider>
-            <SidebarProvider>
-              <div className="relative flex min-h-dvh">
-                <AppSidebar />
-                <SidebarInset className="flex-1 bg-background">{children}</SidebarInset>
-              </div>
-            </SidebarProvider>
-          </TaskProvider>
+          <AuthProvider>
+            <TaskProvider>
+              <SidebarProvider>
+                <div className="relative flex min-h-dvh">
+                  <AppSidebar />
+                  <SidebarInset className="flex-1 bg-background">{children}</SidebarInset>
+                </div>
+              </SidebarProvider>
+            </TaskProvider>
+          </AuthProvider>
         </ThemeProvider>
         <Toaster />
       </body>
