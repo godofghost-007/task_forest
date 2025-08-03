@@ -29,6 +29,7 @@ import {
   BookOpen,
   CalendarIcon,
   Star,
+  Timer,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
@@ -48,6 +49,7 @@ const healthTasks = [
   { icon: Heart, name: 'Mindful Minutes', indicator: 'red' },
   { icon: BookOpen, name: 'Study' },
   { icon: TrendingUp, name: 'Climb Flights' },
+  { icon: Timer, name: 'Pomodoro' },
   {
     icon: () => (
       <div className="relative h-6 w-6">
@@ -82,6 +84,7 @@ const iconMap: { [key: string]: React.ElementType } = {
   Check,
   BookOpen,
   Star,
+  Timer,
 };
 
 import { Label } from '../ui/label';
@@ -225,7 +228,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
       time: time,
       duration: duration,
       music: musicData,
-      showPlay: !!musicData,
+      showPlay: !!musicData || task.icon === 'Timer',
       date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
     });
     onClose();
@@ -562,7 +565,7 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick, onClose }: {
     onDetailsClick({
       title: task.name,
       icon: iconName,
-      duration: 10,
+      duration: task.name === 'Pomodoro' ? 25 : 10,
     });
   }
 
@@ -634,7 +637,7 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick, onClose }: {
                     if (name === 'Mindful Minutes') {
                         onMusicClick({ title: name, icon: iconName });
                     } else {
-                        onDetailsClick({ title: name, icon: iconName, duration: 10 });
+                        onDetailsClick({ title: name, icon: iconName, duration: name === 'Pomodoro' ? 25 : 10 });
                     }
                   }}>
                     <ChevronRight className="h-5 w-5" />
@@ -704,5 +707,3 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
-
-    
