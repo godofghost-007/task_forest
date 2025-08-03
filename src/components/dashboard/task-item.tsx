@@ -63,7 +63,9 @@ export function TaskItem({
     return subtitle;
   }
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteTask(id);
   }
 
