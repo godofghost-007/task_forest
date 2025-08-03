@@ -79,7 +79,7 @@ export function TaskItem({
                     variant="destructive"
                     size="icon"
                     className="absolute top-0 right-0 z-10 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => { e.stopPropagation(); }}
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
