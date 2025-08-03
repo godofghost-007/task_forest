@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
+import { AppLayout } from '@/components/layout/app-layout';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -138,101 +139,103 @@ export default function TaskSessionPage() {
   };
 
   if (!task) {
-    return <div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div>;
+    return <AppLayout><div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div></AppLayout>;
   }
   
   const progress = initialDuration > 0 ? (initialDuration - timeLeft) / initialDuration : 0;
   
   return (
-    <div className="relative h-dvh w-full">
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('https://placehold.co/1920x1080/a2d2ff/a2d2ff.png')", filter: 'blur(4px)' }}
-        data-ai-hint="calm mountain scenery"
-      />
-      <div className="absolute inset-0 bg-black/50" />
-      
-      <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+    <AppLayout>
+      <div className="relative h-dvh w-full">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('https://placehold.co/1920x1080/a2d2ff/a2d2ff.png')", filter: 'blur(4px)' }}
+          data-ai-hint="calm mountain scenery"
+        />
+        <div className="absolute inset-0 bg-black/50" />
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
-           <PlantGrowth progress={progress} />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+          
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
+             <PlantGrowth progress={progress} />
+          </div>
+
+
+          <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
+            <CardContent className="p-6 text-center flex flex-col items-center justify-center">
+              <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
+              <p className="text-white/80">{task.subtitle}</p>
+              
+              <div className="my-4 flex items-center justify-center gap-2 text-6xl font-bold font-mono">
+                  <Timer className="h-12 w-12" />
+                  <span>{formatTime(timeLeft)}</span>
+              </div>
+              
+              {!isSessionCompleted && !task.completed && (
+                  <div className="flex justify-center gap-4 mb-4">
+                      <Button variant="ghost" size="icon" onClick={handleTogglePause} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                          {isPaused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                          <RotateCcw className="h-7 w-7" />
+                      </Button>
+                  </div>
+              )}
+
+
+              {isSessionCompleted && !task.completed && (
+                  <div className="space-y-4">
+                      <p className="font-semibold text-lg text-green-300">Session Complete!</p>
+                      <Button onClick={handleCompleteTask} size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white">
+                          <Check className="mr-2 h-5 w-5" />
+                          Mark as Done
+                      </Button>
+                  </div>
+              )}
+
+              {task.completed && (
+                   <div className="space-y-4">
+                      <p className="font-semibold text-lg text-green-300">Task Already Completed!</p>
+                      <Button onClick={() => router.push('/')} size="lg" className="w-full">
+                          Back to Dashboard
+                      </Button>
+                  </div>
+              )}
+
+              {task.music && musicUrl && (
+                  <div className="mt-2 text-white/70">
+                      <div className="flex items-center justify-center gap-2">
+                          <Music className="h-4 w-4" />
+                          <p className="truncate max-w-[200px]">Playing: {task.music.title}</p>
+                      </div>
+                      <div className="flex justify-center items-center gap-2 mt-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
+                             <Rewind className="h-5 w-5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
+                             {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={handleAudioReset}>
+                             <RotateCcw className="h-5 w-5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
+                             <FastForward className="h-5 w-5" />
+                          </Button>
+                      </div>
+                      <audio 
+                          ref={audioRef} 
+                          src={musicUrl}
+                          onPlay={() => setIsAudioPlaying(true)}
+                          onPause={() => setIsAudioPlaying(false)}
+                          onEnded={() => setIsAudioPlaying(false)}
+                          loop 
+                      />
+                  </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-
-
-        <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
-          <CardContent className="p-6 text-center flex flex-col items-center justify-center">
-            <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
-            <p className="text-white/80">{task.subtitle}</p>
-            
-            <div className="my-4 flex items-center justify-center gap-2 text-6xl font-bold font-mono">
-                <Timer className="h-12 w-12" />
-                <span>{formatTime(timeLeft)}</span>
-            </div>
-            
-            {!isSessionCompleted && !task.completed && (
-                <div className="flex justify-center gap-4 mb-4">
-                    <Button variant="ghost" size="icon" onClick={handleTogglePause} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
-                        {isPaused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
-                        <RotateCcw className="h-7 w-7" />
-                    </Button>
-                </div>
-            )}
-
-
-            {isSessionCompleted && !task.completed && (
-                <div className="space-y-4">
-                    <p className="font-semibold text-lg text-green-300">Session Complete!</p>
-                    <Button onClick={handleCompleteTask} size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white">
-                        <Check className="mr-2 h-5 w-5" />
-                        Mark as Done
-                    </Button>
-                </div>
-            )}
-
-            {task.completed && (
-                 <div className="space-y-4">
-                    <p className="font-semibold text-lg text-green-300">Task Already Completed!</p>
-                    <Button onClick={() => router.push('/')} size="lg" className="w-full">
-                        Back to Dashboard
-                    </Button>
-                </div>
-            )}
-
-            {task.music && musicUrl && (
-                <div className="mt-2 text-white/70">
-                    <div className="flex items-center justify-center gap-2">
-                        <Music className="h-4 w-4" />
-                        <p className="truncate max-w-[200px]">Playing: {task.music.title}</p>
-                    </div>
-                    <div className="flex justify-center items-center gap-2 mt-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
-                           <Rewind className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
-                           {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={handleAudioReset}>
-                           <RotateCcw className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
-                           <FastForward className="h-5 w-5" />
-                        </Button>
-                    </div>
-                    <audio 
-                        ref={audioRef} 
-                        src={musicUrl}
-                        onPlay={() => setIsAudioPlaying(true)}
-                        onPause={() => setIsAudioPlaying(false)}
-                        onEnded={() => setIsAudioPlaying(false)}
-                        loop 
-                    />
-                </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }

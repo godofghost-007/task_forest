@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/layout/app-sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { TaskProvider } from '@/context/task-context';
 import { ThemeProvider } from '@/context/theme-context';
@@ -36,12 +34,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <TaskProvider>
-              <SidebarProvider>
-                <div className="relative flex min-h-dvh">
-                  <AppSidebar />
-                  <SidebarInset className="flex-1 bg-background">{children}</SidebarInset>
-                </div>
-              </SidebarProvider>
+                {children}
             </TaskProvider>
           </AuthProvider>
         </ThemeProvider>

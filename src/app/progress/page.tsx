@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { CheckCircle2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { AppLayout } from '@/components/layout/app-layout';
 
 // Helper to get the last 7 days
 const getLast7Days = () => {
@@ -61,103 +62,105 @@ export default function ProgressPage() {
     });
 
     setChartData(data);
-  }, [tasks]);
+  }, [tasks, completedTasks]);
 
 
   return (
-    <div className="h-full w-full bg-secondary p-4 sm:p-8">
-      <div className="mx-auto max-w-4xl">
-        <header className="mb-8">
-          <h1 className="font-headline text-4xl font-bold text-foreground">
-            Your Progress
-          </h1>
-          <p className="text-muted-foreground">
-            A look at your accomplishments and consistency.
-          </p>
-        </header>
+    <AppLayout>
+      <div className="h-full w-full bg-secondary p-4 sm:p-8">
+        <div className="mx-auto max-w-4xl">
+          <header className="mb-8">
+            <h1 className="font-headline text-4xl font-bold text-foreground">
+              Your Progress
+            </h1>
+            <p className="text-muted-foreground">
+              A look at your accomplishments and consistency.
+            </p>
+          </header>
 
-        <div className="grid gap-8">
+          <div className="grid gap-8">
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="font-headline">Overall Completion</CardTitle>
+                      <CardDescription>
+                          You've completed {completedTasks.length} out of {totalTasks} tasks.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Progress value={completionPercentage} className="h-3" />
+                      <p className="mt-2 text-right text-sm font-medium text-primary">
+                          {Math.round(completionPercentage)}% Complete
+                      </p>
+                  </CardContent>
+              </Card>
+
             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Overall Completion</CardTitle>
-                    <CardDescription>
-                        You've completed {completedTasks.length} out of {totalTasks} tasks.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Progress value={completionPercentage} className="h-3" />
-                    <p className="mt-2 text-right text-sm font-medium text-primary">
-                        {Math.round(completionPercentage)}% Complete
-                    </p>
-                </CardContent>
+              <CardHeader>
+                <CardTitle className="font-headline">Weekly Activity</CardTitle>
+                <CardDescription>
+                  Tasks completed over the last 7 days.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}`}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
+                      contentStyle={{
+                        background: 'hsl(var(--background))',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',
+                      }}
+                    />
+                    <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
             </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Weekly Activity</CardTitle>
-              <CardDescription>
-                Tasks completed over the last 7 days.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}`}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
-                    contentStyle={{
-                      background: 'hsl(var(--background))',
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: 'var(--radius)',
-                    }}
-                  />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Work Description</CardTitle>
-              <CardDescription>A log of your completed tasks.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {completedTasks.length > 0 ? (
-                <ul className="space-y-3">
-                  {completedTasks.map((task) => (
-                    <li key={task.id} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{task.title}</p>
-                        <p className="text-sm text-muted-foreground">{task.subtitle}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-center text-muted-foreground">
-                  No tasks completed yet. Keep going!
-                </p>
-              )}
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-headline">Work Description</CardTitle>
+                <CardDescription>A log of your completed tasks.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completedTasks.length > 0 ? (
+                  <ul className="space-y-3">
+                    {completedTasks.map((task) => (
+                      <li key={task.id} className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{task.title}</p>
+                          <p className="text-sm text-muted-foreground">{task.subtitle}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-center text-muted-foreground">
+                    No tasks completed yet. Keep going!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

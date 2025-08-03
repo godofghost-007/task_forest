@@ -1,32 +1,56 @@
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AddTaskModal } from '@/components/dashboard/add-task-modal';
-import { CalendarView } from '@/components/dashboard/calendar';
-import { TaskGrid } from '@/components/dashboard/task-grid';
+'use client';
 
-export default function DashboardPage() {
+import { useAuth } from '@/context/auth-context';
+import { AuthForm } from '@/components/auth/auth-form';
+import { AppLayout } from '@/components/layout/app-layout';
+import { DashboardPage } from '@/components/dashboard/dashboard-page';
+
+export default function HomePage() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="h-dvh w-full flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 256 256"
+                className="h-12 w-12 text-primary animate-pulse"
+            >
+                <rect width="256" height="256" fill="none" />
+                <path
+                d="M213.4,181.9,141.4,45.9a15.9,15.9,0,0,0-26.8,0L42.6,181.9a16.1,16.1,0,0,0,13.4,24.6H200A16.1,16.1,0,0,0,213.4,181.9Z"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="16"
+                />
+                <line
+                x1="128"
+                y1="208"
+                x2="128"
+                y2="120"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="16"
+                />
+            </svg>
+            <p className="text-muted-foreground">Loading Task Forest...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
   return (
-    <div className="flex h-full flex-col bg-gradient-to-br from-gradient-orange-start/80 to-gradient-orange-end/80 text-white">
-      <header className="flex items-center justify-between p-6">
-        <div>
-          <h1 className="font-headline text-3xl font-bold text-white">
-            Task Forest
-          </h1>
-          <p className="text-white/80">Let's make today productive!</p>
-        </div>
-        <AddTaskModal>
-          <Button variant="secondary" size="lg" className="gap-2 bg-white/20 text-white hover:bg-white/30">
-            <Plus className="h-5 w-5" />
-            New Task
-          </Button>
-        </AddTaskModal>
-      </header>
-      <main className="flex-1 overflow-auto p-6">
-        <div className="space-y-8">
-          <CalendarView />
-          <TaskGrid />
-        </div>
-      </main>
-    </div>
+    <AppLayout>
+      <DashboardPage />
+    </AppLayout>
   );
 }

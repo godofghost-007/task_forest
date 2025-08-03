@@ -1,11 +1,9 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -24,9 +22,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
             setUsername(userDoc.data().username);
+        } else {
+            // Handle case for users who signed up with Google but don't have a doc yet
+            // This case is handled in AuthForm, but as a fallback:
+            setUsername(user.displayName || user.email?.split('@')[0] || 'User');
         }
       } else {
         setUser(null);
@@ -42,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
