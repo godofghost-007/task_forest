@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useMusic } from '@/context/music-context';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { meditationMusic } from '@/components/dashboard/add-task-modal';
 
 
 function formatTime(seconds: number) {
@@ -143,7 +144,7 @@ export default function TaskSessionPage() {
     }
 
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, sessionType, durations, pomodoroCount]);
 
   React.useEffect(() => {
     if (audioRef.current) {
@@ -176,6 +177,7 @@ export default function TaskSessionPage() {
   };
 
   const handleResetTimer = () => {
+    if (task?.completed) return;
     setIsActive(false);
     setSessionType('work');
     setTimeLeft(durations.work);
@@ -367,8 +369,11 @@ export default function TaskSessionPage() {
                           onPlay={() => setIsAudioPlaying(true)}
                           onPause={() => setIsAudioPlaying(false)}
                           onEnded={() => {
-                            if (audioRef.current) audioRef.current.currentTime = 0;
-                            setIsAudioPlaying(false);
+                            if (isActive && audioRef.current) {
+                                audioRef.current.play();
+                            } else {
+                                setIsAudioPlaying(false);
+                            }
                           }}
                           loop 
                       />

@@ -189,7 +189,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
       streak: 0,
       completed: false,
       time: time,
-      duration: duration,
+      duration: Math.max(5, duration),
       music: musicData,
       showPlay: !!musicData || task.icon === 'Timer',
       date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
@@ -252,7 +252,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 id="duration"
                 type="number"
                 value={duration}
-                onChange={(e) => setDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                onChange={(e) => setDuration(parseInt(e.target.value, 10))}
                 min={5}
                 className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
             />
@@ -333,7 +333,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         icon: 'Pencil',
         streak: 0,
         completed: false,
-        duration: duration,
+        duration: Math.max(5, duration),
         music: musicData,
         showPlay: !!musicData,
         date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
@@ -398,7 +398,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
             id="duration"
             type="number"
             value={duration}
-            onChange={(e) => setDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+            onChange={(e) => setDuration(parseInt(e.target.value, 10))}
             min={5}
             className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
         />
