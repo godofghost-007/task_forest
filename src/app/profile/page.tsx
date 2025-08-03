@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette } from 'lucide-react';
+import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 import { ThemeDialog } from '@/components/profile/theme-dialog';
 import { EditProfileDialog } from '@/components/profile/edit-profile-dialog';
+import { format, isSameDay, parseISO } from 'date-fns';
 
 export interface UserProfile {
   name: string;
@@ -18,6 +19,7 @@ export interface UserProfile {
   mobile: string;
   hobbies: string;
   avatarUrl: string;
+  dob?: string;
 }
 
 export default function ProfilePage() {
@@ -33,7 +35,10 @@ export default function ProfilePage() {
     mobile: '123-456-7890',
     hobbies: 'Reading, hiking, coding',
     avatarUrl: 'https://placehold.co/100x100.png',
+    dob: '1995-08-15',
   });
+  
+  const isBirthday = userProfile.dob ? isSameDay(parseISO(userProfile.dob), new Date()) : false;
 
   const completedTasks = tasks.filter(task => task.completed);
   const totalTasks = tasks.length;
@@ -45,6 +50,18 @@ export default function ProfilePage() {
     <div className="h-full w-full bg-secondary p-4 sm:p-8 overflow-y-auto">
       <div className="mx-auto max-w-4xl space-y-8">
         
+        {isBirthday && (
+            <Card className="bg-gradient-to-r from-yellow-300 to-orange-400 text-white">
+                <CardContent className="p-6 flex items-center gap-4">
+                    <Cake className="h-10 w-10"/>
+                    <div>
+                        <CardTitle>Happy Birthday, {userProfile.name}!</CardTitle>
+                        <CardDescription className="text-white/90">Wishing you a fantastic day and a productive year ahead!</CardDescription>
+                    </div>
+                </CardContent>
+            </Card>
+        )}
+
         {/* Profile Header */}
         <Card>
           <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
@@ -57,6 +74,7 @@ export default function ProfilePage() {
             <div className="text-center sm:text-left">
               <h1 className="font-headline text-3xl font-bold">{userProfile.name}</h1>
               <p className="text-muted-foreground">{userProfile.email}</p>
+               {userProfile.dob && <p className="text-sm text-muted-foreground">Birthday: {format(parseISO(userProfile.dob), 'MMMM d, yyyy')}</p>}
               <EditProfileDialog userProfile={userProfile} onSave={setUserProfile}>
                 <Button variant="outline" size="sm" className="mt-2">Edit Profile</Button>
               </EditProfileDialog>

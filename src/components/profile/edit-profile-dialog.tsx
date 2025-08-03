@@ -20,8 +20,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Camera } from 'lucide-react';
+import { User, Camera, Calendar as CalendarIcon } from 'lucide-react';
 import type { UserProfile } from '@/app/profile/page';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
+
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -29,6 +34,7 @@ const profileSchema = z.object({
   mobile: z.string().optional(),
   hobbies: z.string().optional(),
   avatarUrl: z.string().url('Invalid URL').optional(),
+  dob: z.string().optional(),
 });
 
 interface EditProfileDialogProps {
@@ -47,11 +53,14 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<UserProfile>({
     resolver: zodResolver(profileSchema),
     defaultValues: userProfile,
   });
+
+  const dobValue = watch('dob');
 
   React.useEffect(() => {
     if (open) {
@@ -60,6 +69,7 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
       setValue('mobile', userProfile.mobile);
       setValue('hobbies', userProfile.hobbies);
       setValue('avatarUrl', userProfile.avatarUrl);
+      setValue('dob', userProfile.dob);
       setAvatarPreview(userProfile.avatarUrl);
     }
   }, [userProfile, open, setValue]);
@@ -127,6 +137,34 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" {...register('email')} />
             {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
+          </div>
+           <div>
+            <Label htmlFor="dob">Date of Birth</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dobValue && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dobValue ? format(parseISO(dobValue), "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dobValue ? parseISO(dobValue) : undefined}
+                  onSelect={(date) => setValue('dob', date ? format(date, 'yyyy-MM-dd') : undefined)}
+                  initialFocus
+                  captionLayout="dropdown-buttons"
+                  fromYear={1900}
+                  toYear={new Date().getFullYear()}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <Label htmlFor="mobile">Mobile Number</Label>
