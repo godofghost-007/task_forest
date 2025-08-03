@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Paperclip, Send, Smile, Image as ImageIcon, FileText, Film, StickyNote } from 'lucide-react';
+import { Paperclip, Send, Smile, Image as ImageIcon, FileText, Film, StickyNote, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
@@ -18,8 +18,8 @@ interface User {
   id: string;
   name: string;
   avatarUrl: string;
-  lastMessage: string;
-  lastMessageTime: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
   online?: boolean;
 }
 
@@ -41,6 +41,8 @@ const mockUsers: User[] = [
   { id: 'user-2', name: 'Bob', avatarUrl: 'https://placehold.co/100x100/ffb3ba/333.png', lastMessage: 'Sounds good!', lastMessageTime: '10:30 AM' },
   { id: 'user-3', name: 'Charlie', avatarUrl: 'https://placehold.co/100x100/bae1ff/333.png', lastMessage: 'Can you send the file?', lastMessageTime: 'Yesterday' },
   { id: 'user-4', name: 'Diana', avatarUrl: 'https://placehold.co/100x100/ffffba/333.png', lastMessage: 'Just checking in.', lastMessageTime: 'Yesterday', online: true },
+  { id: 'user-5', name: 'Eve', avatarUrl: 'https://placehold.co/100x100/baffc9/333.png' },
+  { id: 'user-6', name: 'Frank', avatarUrl: 'https://placehold.co/100x100/ffdfba/333.png' },
 ];
 
 const mockMessages: { [key: string]: Message[] } = {
@@ -61,7 +63,9 @@ const mockMessages: { [key: string]: Message[] } = {
   ],
   'user-4': [
     { id: 'msg-10', senderId: 'user-4', text: 'Just checking in.', timestamp: 'Yesterday', type: 'text' },
-  ]
+  ],
+  'user-5': [],
+  'user-6': [],
 };
 
 // Mock current user
@@ -117,7 +121,7 @@ function AttachmentMenu({ onFileSelect }: { onFileSelect: (file: File) => void }
     );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, otherUser }: { message: Message, otherUser: User }) {
     const isMe = message.senderId === 'me';
     
     const renderContent = () => {
@@ -151,8 +155,8 @@ function MessageBubble({ message }: { message: Message }) {
         <div className={cn('flex items-end gap-2 my-2', isMe ? 'justify-end' : 'justify-start')}>
              {!isMe && (
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={mockUsers.find(u => u.id === message.senderId)?.avatarUrl} />
-                    <AvatarFallback>{mockUsers.find(u => u.id === message.senderId)?.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={otherUser?.avatarUrl} />
+                    <AvatarFallback>{otherUser?.name.charAt(0)}</AvatarFallback>
                 </Avatar>
             )}
             <div className={cn(
@@ -176,10 +180,24 @@ export default function SocialPage() {
   const [selectedUser, setSelectedUser] = useState<User>(mockUsers[0]);
   const [messages, setMessages] = useState<Message[]>(mockMessages[mockUsers[0].id]);
   const [messageInput, setMessageInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const conversationUsers = useMemo(() => {
+    return mockUsers.filter(u => u.lastMessage);
+  }, []);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    return mockUsers.filter(u => 
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+      !conversationUsers.some(cu => cu.id === u.id)
+    );
+  }, [searchQuery, conversationUsers]);
 
   const handleUserSelect = (user: User) => {
     setSelectedUser(user);
     setMessages(mockMessages[user.id] || []);
+    setSearchQuery('');
   };
   
   const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -187,7 +205,7 @@ export default function SocialPage() {
   };
 
   const handleSendMessage = () => {
-    if (messageInput.trim()) {
+    if (messageInput.trim() && selectedUser) {
       const newMessage: Message = {
         id: `msg-${Date.now()}`,
         senderId: 'me',
@@ -196,11 +214,18 @@ export default function SocialPage() {
         type: 'text',
       };
       setMessages([...messages, newMessage]);
+      // Also update the mock data so it's reflected in the conversation list
+      const userInList = mockUsers.find(u => u.id === selectedUser.id);
+      if (userInList) {
+        userInList.lastMessage = messageInput;
+        userInList.lastMessageTime = newMessage.timestamp;
+      }
       setMessageInput('');
     }
   };
   
   const handleFileUpload = (file: File) => {
+      if (!selectedUser) return;
       const newMessage: Message = {
         id: `msg-${Date.now()}`,
         senderId: 'me',
@@ -213,6 +238,11 @@ export default function SocialPage() {
         }
       };
       setMessages([...messages, newMessage]);
+      const userInList = mockUsers.find(u => u.id === selectedUser.id);
+      if (userInList) {
+        userInList.lastMessage = file.type.startsWith('image/') ? 'Sent an image' : 'Sent a file';
+        userInList.lastMessageTime = newMessage.timestamp;
+      }
   }
 
   return (
@@ -221,15 +251,50 @@ export default function SocialPage() {
            <Card className="h-full w-1/3 min-w-[300px] max-w-[400px] rounded-r-none border-r flex flex-col">
                 <header className="p-4 border-b">
                     <h2 className="text-xl font-bold font-headline">Chats</h2>
-                    <Input placeholder="Search or start new chat" className="mt-2" />
+                    <Input 
+                      placeholder="Search users..." 
+                      className="mt-2"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </header>
                 <ScrollArea className="flex-1">
-                    {mockUsers.map(user => (
+                    {searchQuery ? (
+                      <div>
+                        {searchResults.length > 0 ? (
+                           <div className="p-2 text-sm font-semibold text-muted-foreground">New Chat</div>
+                        ) : null}
+                        {searchResults.map(user => (
+                          <div 
+                              key={user.id} 
+                              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-secondary/70"
+                              onClick={() => handleUserSelect(user)}
+                          >
+                              <Avatar className="h-12 w-12">
+                                  <AvatarImage src={user.avatarUrl} />
+                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 overflow-hidden">
+                                  <h3 className="font-semibold truncate">{user.name}</h3>
+                              </div>
+                               <Button variant="ghost" size="icon">
+                                 <UserPlus className="h-5 w-5 text-muted-foreground"/>
+                               </Button>
+                          </div>
+                        ))}
+                        {searchResults.length === 0 && (
+                          <p className="p-4 text-center text-sm text-muted-foreground">No users found.</p>
+                        )}
+                        <hr className="my-2"/>
+                      </div>
+                    ) : null}
+
+                    {conversationUsers.map(user => (
                         <div 
                             key={user.id} 
                             className={cn(
                                 "flex items-center gap-4 p-4 cursor-pointer hover:bg-secondary/70",
-                                selectedUser.id === user.id && 'bg-secondary'
+                                selectedUser?.id === user.id && 'bg-secondary'
                             )}
                             onClick={() => handleUserSelect(user)}
                         >
@@ -248,48 +313,58 @@ export default function SocialPage() {
                 </ScrollArea>
            </Card>
            <div className="flex-1 flex flex-col h-full">
-                <header className="flex items-center gap-4 p-4 border-b bg-card">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedUser.avatarUrl} />
-                        <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h3 className="font-semibold">{selectedUser.name}</h3>
-                        <p className="text-sm text-green-500">{selectedUser.online ? 'Online' : 'Offline'}</p>
-                    </div>
-                </header>
-                <ScrollArea className="flex-1 p-4 bg-background">
-                    <div className="flex flex-col">
-                        {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
-                    </div>
-                </ScrollArea>
-                <footer className="p-4 border-t bg-card">
-                    <div className="flex items-center gap-2">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground">
-                                    <Smile className="h-5 w-5" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="p-0 border-0">
-                                <EmojiPicker onEmojiClick={onEmojiClick} />
-                            </PopoverContent>
-                        </Popover>
-                        
-                        <AttachmentMenu onFileSelect={handleFileUpload}/>
+                {selectedUser ? (
+                  <>
+                  <header className="flex items-center gap-4 p-4 border-b bg-card">
+                      <Avatar className="h-10 w-10">
+                          <AvatarImage src={selectedUser.avatarUrl} />
+                          <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                          <h3 className="font-semibold">{selectedUser.name}</h3>
+                          <p className="text-sm text-green-500">{selectedUser.online ? 'Online' : 'Offline'}</p>
+                      </div>
+                  </header>
+                  <ScrollArea className="flex-1 p-4 bg-background">
+                      <div className="flex flex-col">
+                          {messages.map(msg => <MessageBubble key={msg.id} message={msg} otherUser={selectedUser} />)}
+                      </div>
+                  </ScrollArea>
+                  <footer className="p-4 border-t bg-card">
+                      <div className="flex items-center gap-2">
+                          <Popover>
+                              <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-muted-foreground">
+                                      <Smile className="h-5 w-5" />
+                                  </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0 border-0">
+                                  <EmojiPicker onEmojiClick={onEmojiClick} />
+                              </PopoverContent>
+                          </Popover>
+                          
+                          <AttachmentMenu onFileSelect={handleFileUpload}/>
 
-                        <Input 
-                            placeholder="Type a message..." 
-                            className="flex-1"
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        />
-                        <Button size="icon" onClick={handleSendMessage}>
-                            <Send className="h-5 w-5" />
-                        </Button>
-                    </div>
-                </footer>
+                          <Input 
+                              placeholder="Type a message..." 
+                              className="flex-1"
+                              value={messageInput}
+                              onChange={(e) => setMessageInput(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                          />
+                          <Button size="icon" onClick={handleSendMessage}>
+                              <Send className="h-5 w-5" />
+                          </Button>
+                      </div>
+                  </footer>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <MessageSquare className="h-20 w-20 mb-4" />
+                    <h2 className="text-2xl font-semibold">Welcome to your Social Hub</h2>
+                    <p>Select a conversation or search for a user to start chatting.</p>
+                  </div>
+                )}
            </div>
         </div>
     </AppLayout>
