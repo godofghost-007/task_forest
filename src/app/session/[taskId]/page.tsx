@@ -7,13 +7,15 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward, Coffee } from 'lucide-react';
+import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward, Coffee, Settings, Image as ImageIcon, Upload, Loader2, Video } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useBackgrounds } from '@/context/background-context';
 import { cn } from '@/lib/utils';
 import { useMusic } from '@/context/music-context';
 import { meditationMusic } from '@/components/dashboard/add-task-modal';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 function formatTime(seconds: number) {
@@ -37,9 +39,10 @@ export default function TaskSessionPage() {
   const router = useRouter();
   const params = useParams();
   const { tasks, completeTask } = useTasks();
-  const { taskSessionBackground } = useBackgrounds();
+  const { taskSessionBackground, setTaskSessionBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
   const { musicLibrary } = useMusic();
   const [task, setTask] = React.useState<Task | null>(null);
+  const bgFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pomodoro State
   const [sessionType, setSessionType] = React.useState<SessionType>('work');
@@ -129,35 +132,31 @@ export default function TaskSessionPage() {
         setIsSessionCompleted(true);
         setPomodoroCount(prev => prev + 1);
         // Logic for next session
-        const nextSession: SessionType = pomodoroCount > 0 && pomodoroCount % 4 === 0 ? 'longBreak' : 'longBreak';
-        setSessionType(nextSession);
+        const nextSession: SessionType = pomodoroCount > 0 && pomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
         setTimeLeft(durations[nextSession]);
-
+        setSessionType(nextSession);
       } else { // Break finished
         setSessionType('work');
         setTimeLeft(durations.work);
       }
-      // Optionally play a sound
     }
 
     return () => clearInterval(timerId);
   }, [isActive, timeLeft, sessionType, durations, pomodoroCount]);
-
-  React.useEffect(() => {
-    if (audioRef.current) {
-        if (isActive && isAudioPlaying) {
-            audioRef.current.play().catch(e => console.error("Audio play failed", e));
-        } else {
-            audioRef.current.pause();
-        }
-    }
-  }, [isActive, isAudioPlaying, musicUrl]);
   
   React.useEffect(() => {
     if (task?.music) {
-        setIsAudioPlaying(isActive);
+        const shouldPlay = isActive && musicUrl;
+        if (audioRef.current) {
+            if (shouldPlay) {
+                audioRef.current.play().catch(e => console.error("Audio play failed", e));
+            } else {
+                audioRef.current.pause();
+            }
+        }
+        setIsAudioPlaying(shouldPlay);
     }
-  }, [isActive, task?.music]);
+  }, [isActive, task?.music, musicUrl]);
 
 
   const handleCompleteTask = () => {
@@ -179,20 +178,26 @@ export default function TaskSessionPage() {
     setSessionType('work');
     setTimeLeft(durations.work);
     if(audioRef.current) {
+        audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsAudioPlaying(false);
-    }
-  };
-
-  const handleAudioPlayPause = () => {
-    if (isActive) {
-      setIsAudioPlaying(!isAudioPlaying);
     }
   };
 
   const handleAudioSeek = (amount: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime += amount;
+    }
+  };
+
+  const handleBgFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        await addBackgroundToLibrary({
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            title: file.name,
+            file: file,
+        }, true); // The `true` sets it as the active task session background
     }
   };
 
@@ -209,6 +214,8 @@ export default function TaskSessionPage() {
         case 'longBreak': return 'Long Break';
     }
   }
+
+  const recentBackgrounds = [...backgroundLibrary].reverse().slice(0, 3);
 
   return (
     <AppLayout>
@@ -233,6 +240,53 @@ export default function TaskSessionPage() {
         <div className="absolute inset-0 bg-black/50" />
         
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
+                        <ImageIcon className="h-6 w-6"/>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-background/80 backdrop-blur-md border-white/20 text-foreground">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Change Background</h4>
+                        <p className="text-sm text-muted-foreground">Select a background for this session.</p>
+                    </div>
+                     <input
+                        type="file"
+                        ref={bgFileInputRef}
+                        className="hidden"
+                        accept="image/png,image/jpeg,video/mp4,video/webm"
+                        onChange={handleBgFileChange}
+                        disabled={isBgUploading}
+                    />
+                    <Button size="sm" onClick={() => bgFileInputRef.current?.click()} disabled={isBgUploading} className="w-full mt-4">
+                        {isBgUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                        <span className="ml-2">Upload from Device</span>
+                    </Button>
+                    <ScrollArea className="h-60 mt-4">
+                        <div className="grid grid-cols-2 gap-2 pr-2">
+                            <button onClick={() => setTaskSessionBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
+                                Use Default
+                            </button>
+                            {recentBackgrounds.map(bg => (
+                                <button key={bg.id} onClick={() => setTaskSessionBackground(bg)} className="relative aspect-video w-full rounded-md overflow-hidden group">
+                                    {bg.type === 'image' ? (
+                                        <img src={bg.url} alt="background" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <video src={bg.url} muted loop className="w-full h-full object-cover" />
+                                    )}
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                                        <Check className="h-8 w-8 text-white"/>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </PopoverContent>
+            </Popover>
+          </div>
           
           <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none -z-10">
              {!taskSessionBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
@@ -290,11 +344,8 @@ export default function TaskSessionPage() {
                           <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
                              <Rewind className="h-5 w-5" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
+                          <Button variant="ghost" size="icon" onClick={handleToggleTimer}>
                              {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={handleResetTimer}>
-                             <RotateCcw className="h-5 w-5" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
                              <FastForward className="h-5 w-5" />
@@ -313,7 +364,6 @@ export default function TaskSessionPage() {
                             }
                           }}
                           loop 
-                          controls
                           className='hidden'
                       />
                   </div>
@@ -325,5 +375,3 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
-
-    

@@ -116,6 +116,9 @@ export default function PomodoroPage() {
     } else if (timeLeft === 0 && isActive) {
       // Timer finished
       setIsActive(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
       if (sessionType === 'work') {
         const newPomodoroCount = pomodoroCount + 1;
         setPomodoroCount(newPomodoroCount);
@@ -138,25 +141,29 @@ export default function PomodoroPage() {
       }
     }
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, addTask, durations.work, pomodoroCount, longBreakInterval, sessionType]);
 
-  React.useEffect(() => {
-    if (audioRef.current) {
-        if (isActive && isAudioPlaying) {
-            audioRef.current.play().catch(e => console.error("Audio play failed", e));
-        } else {
-            audioRef.current.pause();
-        }
+  const handleToggleTimer = () => {
+    const newIsActive = !isActive;
+    setIsActive(newIsActive);
+    if (audioRef.current && musicUrl) {
+      if (newIsActive) {
+        audioRef.current.play().catch(e => console.error("Audio play failed", e));
+        setIsAudioPlaying(true);
+      } else {
+        audioRef.current.pause();
+        setIsAudioPlaying(false);
+      }
     }
-  }, [isActive, isAudioPlaying, musicUrl]);
-
-  const handleToggleTimer = () => setIsActive(!isActive);
+  };
 
   const handleResetTimer = () => {
     setIsActive(false);
     setTimeLeft(durations[sessionType]);
     if(audioRef.current) {
+        audioRef.current.pause();
         audioRef.current.currentTime = 0;
+        setIsAudioPlaying(false);
     }
   };
   
@@ -172,8 +179,6 @@ export default function PomodoroPage() {
         setTimeLeft(newDurations[sessionType]);
     }
   };
-
-  const handleAudioPlayPause = () => setIsAudioPlaying(!isAudioPlaying);
 
   const handleAudioSeek = (amount: number) => {
     if (audioRef.current) {
@@ -436,7 +441,7 @@ export default function PomodoroPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
                            <Rewind className="h-5 w-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
+                        <Button variant="ghost" size="icon" onClick={handleToggleTimer}>
                            {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
@@ -450,7 +455,6 @@ export default function PomodoroPage() {
                         onPause={() => setIsAudioPlaying(false)}
                         onEnded={() => setIsAudioPlaying(false)}
                         loop
-                        controls
                         className='hidden'
                     />
                 </div>
@@ -462,5 +466,3 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
-
-    
