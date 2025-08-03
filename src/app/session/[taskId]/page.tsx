@@ -22,8 +22,8 @@ export default function TaskSessionPage() {
   const { tasks, completeTask } = useTasks();
   const [task, setTask] = React.useState<Task | null>(null);
   const [timeLeft, setTimeLeft] = React.useState(0);
-  const [isCompleted, setIsCompleted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(false); // Start playing
+  const [isSessionCompleted, setIsSessionCompleted] = React.useState(false);
+  const [isPaused, setIsPaused] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
@@ -40,10 +40,14 @@ export default function TaskSessionPage() {
     const currentTask = tasks.find((t) => t.id === taskId);
     if (currentTask) {
       setTask(currentTask);
-      setTimeLeft((currentTask.duration || 0) * 60);
+      const initialTime = (currentTask.duration || 0) * 60;
+      setTimeLeft(initialTime);
+      
       if (currentTask.completed) {
-        setIsCompleted(true);
+        setIsSessionCompleted(true);
         setIsPaused(true);
+      } else {
+        setIsPaused(false); // Auto-start timer
       }
       
       if (currentTask.music) {
@@ -53,21 +57,23 @@ export default function TaskSessionPage() {
            setMusicUrl(`/music/${currentTask.music.id}.mp3`);
         }
         if (!currentTask.completed) {
-          setIsAudioPlaying(true);
+          setIsAudioPlaying(true); // Auto-start music
         }
       }
 
     } else {
-      // Handle task not found, maybe redirect
       router.push('/');
     }
   }, [taskId, tasks, router]);
 
   React.useEffect(() => {
-    if (!task || isCompleted || timeLeft <= 0 || isPaused) {
-        if (timeLeft <= 0 && task && !task.completed) {
-            setIsCompleted(true);
-        }
+    if (timeLeft <= 0 && task && !task.completed) {
+      setIsSessionCompleted(true);
+      setIsAudioPlaying(false); // Stop music
+      return;
+    }
+
+    if (!task || task.completed || isPaused) {
         return;
     };
 
@@ -76,17 +82,17 @@ export default function TaskSessionPage() {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [task, timeLeft, isCompleted, isPaused]);
+  }, [task, timeLeft, isPaused]);
 
   React.useEffect(() => {
     if (audioRef.current) {
-        if (isAudioPlaying && !isCompleted) {
+        if (isAudioPlaying && !isSessionCompleted) {
             audioRef.current.play().catch(e => console.error("Audio play failed", e));
         } else {
             audioRef.current.pause();
         }
     }
-  }, [isAudioPlaying, isCompleted]);
+  }, [isAudioPlaying, isSessionCompleted]);
 
 
   const handleCompleteTask = () => {
@@ -104,6 +110,13 @@ export default function TaskSessionPage() {
         setIsAudioPlaying(false);
     }
   };
+  
+  const handleTogglePause = () => {
+    if (!task?.completed && !isSessionCompleted) {
+       setIsPaused(!isPaused);
+       setIsAudioPlaying(!isAudioPlaying);
+    }
+  }
 
   const handleAudioPlayPause = () => {
     setIsAudioPlaying(!isAudioPlaying);
@@ -148,9 +161,9 @@ export default function TaskSessionPage() {
                 <span>{formatTime(timeLeft)}</span>
             </div>
             
-            {!isCompleted && !task.completed && (
+            {!isSessionCompleted && !task.completed && (
                 <div className="flex justify-center gap-4 mb-8">
-                    <Button variant="ghost" size="icon" onClick={() => setIsPaused(!isPaused)} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                    <Button variant="ghost" size="icon" onClick={handleTogglePause} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
                         {isPaused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
@@ -160,7 +173,7 @@ export default function TaskSessionPage() {
             )}
 
 
-            {isCompleted && !task.completed && (
+            {isSessionCompleted && !task.completed && (
                 <div className="space-y-4">
                     <p className="font-semibold text-lg text-green-300">Session Complete!</p>
                     <Button onClick={handleCompleteTask} size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white">
@@ -204,6 +217,7 @@ export default function TaskSessionPage() {
                         src={musicUrl}
                         onPlay={() => setIsAudioPlaying(true)}
                         onPause={() => setIsAudioPlaying(false)}
+                        onEnded={() => setIsAudioPlaying(false)}
                         loop 
                     />
                 </div>
