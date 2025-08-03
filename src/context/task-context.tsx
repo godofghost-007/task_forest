@@ -14,6 +14,7 @@ export interface Task {
   time?: string;
   duration?: number;
   music?: {
+    id: string;
     title: string;
     duration: string;
   };
@@ -23,6 +24,9 @@ interface TaskContextType {
   tasks: Task[];
   addTask: (task: Task) => void;
   completeTask: (taskId: string) => void;
+  isTaskModalOpen: boolean;
+  setTaskModalOpen: (isOpen: boolean) => void;
+  closeTaskModal: () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -84,6 +88,7 @@ const initialTasks: Task[] = [
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [isTaskModalOpen, setTaskModalOpen] = useState(false);
 
   const addTask = (task: Omit<Task, 'id' | 'completed' | 'streak'>) => {
     const newTask: Task = {
@@ -95,6 +100,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
+  const closeTaskModal = () => {
+    setTaskModalOpen(false);
+  }
+
   const completeTask = (taskId: string) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -104,7 +113,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, completeTask }}>
+    <TaskContext.Provider value={{ tasks, addTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal }}>
       {children}
     </TaskContext.Provider>
   );
