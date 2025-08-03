@@ -215,7 +215,7 @@ export default function TaskSessionPage() {
           </div>
 
 
-          <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
+          <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white border-white/20 self-center">
             <CardContent className="p-6 text-center flex flex-col items-center justify-center">
               <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{getSessionTitle()}</h1>
               {sessionType === 'work' && <p className="text-white/80">{task.subtitle}</p>}

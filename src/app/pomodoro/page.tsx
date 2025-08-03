@@ -369,7 +369,7 @@ export default function PomodoroPage() {
         </div>
 
 
-        <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
+        <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white border-white/20 self-center">
           <CardContent className="p-6 text-center flex flex-col items-center justify-center">
             
             <Tabs value={sessionType} onValueChange={(value) => setSessionType(value as SessionType)} className="w-[300px] mb-2">
