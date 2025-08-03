@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { mockUsers } from '@/app/social/page'; // Import mock users for validation
+import { mockUsers } from '@/lib/mock-data'; // Import mock users for validation
 
 
 const profileSchema = z.object({
