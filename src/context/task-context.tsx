@@ -19,6 +19,7 @@ export interface Task {
     id?: string;
     title: string;
     duration: string;
+    fileDataUrl?: string; // Add this to store the base64 URL
   };
   date: string; // YYYY-MM-DD
 }

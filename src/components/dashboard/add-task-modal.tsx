@@ -86,16 +86,19 @@ import { Label } from '../ui/label';
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask, selectedDate } = useTasks();
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(meditationMusic[0]);
-  const [localFileName, setLocalFileName] = useState<string | null>(null);
+  const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const handleAddTask = () => {
-    let musicData = selectedMusic;
-    if (localFileName) {
-      // In a real app, you would handle the file upload here.
-      // For now, we'll just use the file name.
-      musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
+    let musicData: Task['music'] | undefined = selectedMusic;
+    if (localFile) {
+      musicData = { 
+        id: Date.now().toString(), 
+        title: localFile.name, 
+        duration: 'Custom',
+        fileDataUrl: localFile.dataUrl,
+      };
     }
     
     addTask({
@@ -115,8 +118,13 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setLocalFileName(event.target.files[0].name);
-      setSelectedMusic(undefined);
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLocalFile({ name: file.name, dataUrl: e.target?.result as string });
+        setSelectedMusic(undefined);
+      }
+      reader.readAsDataURL(file);
     }
   };
   
@@ -139,7 +147,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
             key={music.id}
             onClick={() => {
               setSelectedMusic(music)
-              setLocalFileName(null);
+              setLocalFile(null);
             }}
             className={cn(
               "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
@@ -165,14 +173,14 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
                 onClick={handleUploadClick}
                 className={cn(
                   "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
-                  localFileName ? "bg-white/30" : "hover:bg-white/10"
+                  localFile ? "bg-white/30" : "hover:bg-white/10"
                 )}
             >
                 <div>
                     <p className="font-medium">From your device</p>
-                    {localFileName && <p className="text-sm text-white/70 truncate max-w-xs">{localFileName}</p>}
+                    {localFile && <p className="text-sm text-white/70 truncate max-w-xs">{localFile.name}</p>}
                 </div>
-                {localFileName && <Check className="h-5 w-5 text-white" />}
+                {localFile && <Check className="h-5 w-5 text-white" />}
             </button>
         </div>
       </div>
@@ -191,13 +199,18 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
-  const [localFileName, setLocalFileName] = useState<string | null>(null);
+  const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddTask = () => {
-    let musicData = selectedMusic;
-    if (localFileName) {
-      musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
+    let musicData: Task['music'] | undefined = selectedMusic;
+    if (localFile) {
+      musicData = { 
+          id: Date.now().toString(), 
+          title: localFile.name, 
+          duration: 'Custom',
+          fileDataUrl: localFile.dataUrl,
+      };
     }
     addTask({
       id: Date.now().toString(),
@@ -219,8 +232,13 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setLocalFileName(event.target.files[0].name);
-      setSelectedMusic(undefined);
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLocalFile({ name: file.name, dataUrl: e.target?.result as string });
+        setSelectedMusic(undefined);
+      }
+      reader.readAsDataURL(file);
     }
   };
 
@@ -292,7 +310,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
               key={music.id}
               onClick={() => {
                 setSelectedMusic(music.id === selectedMusic?.id ? undefined : music)
-                setLocalFileName(null);
+                setLocalFile(null);
               }}
               className={cn(
                 "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
@@ -318,14 +336,14 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                   onClick={handleUploadClick}
                   className={cn(
                     "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
-                    localFileName ? "bg-white/30" : "hover:bg-white/10"
+                    localFile ? "bg-white/30" : "hover:bg-white/10"
                   )}
               >
                   <div>
                       <p className="font-medium">From your device</p>
-                      {localFileName && <p className="text-sm text-white/70 truncate max-w-xs">{localFileName}</p>}
+                      {localFile && <p className="text-sm text-white/70 truncate max-w-xs">{localFile.name}</p>}
                   </div>
-                  {localFileName && <Check className="h-5 w-5 text-white" />}
+                  {localFile && <Check className="h-5 w-5 text-white" />}
               </button>
           </div>
         </div>
@@ -344,15 +362,20 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
-  const [localFileName, setLocalFileName] = useState<string | null>(null);
+  const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
 
   const handleAddTask = () => {
     if (title.trim()) {
-      let musicData = selectedMusic;
-      if (localFileName) {
-        musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
+      let musicData: Task['music'] | undefined = selectedMusic;
+      if (localFile) {
+        musicData = { 
+            id: Date.now().toString(), 
+            title: localFile.name, 
+            duration: 'Custom',
+            fileDataUrl: localFile.dataUrl,
+        };
       }
       addTask({
         id: Date.now().toString(),
@@ -373,8 +396,13 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setLocalFileName(event.target.files[0].name);
-      setSelectedMusic(undefined);
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLocalFile({ name: file.name, dataUrl: e.target?.result as string });
+        setSelectedMusic(undefined);
+      }
+      reader.readAsDataURL(file);
     }
   };
 
@@ -442,7 +470,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
               key={music.id}
               onClick={() => {
                 setSelectedMusic(music.id === selectedMusic?.id ? undefined : music)
-                setLocalFileName(null);
+                setLocalFile(null);
               }}
               className={cn(
                 "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
@@ -468,14 +496,14 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
                   onClick={handleUploadClick}
                   className={cn(
                     "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
-                    localFileName ? "bg-white/30" : "hover:bg-white/10"
+                    localFile ? "bg-white/30" : "hover:bg-white/10"
                   )}
               >
                   <div>
                       <p className="font-medium">From your device</p>
-                      {localFileName && <p className="text-sm text-white/70 truncate max-w-xs">{localFileName}</p>}
+                      {localFile && <p className="text-sm text-white/70 truncate max-w-xs">{localFile.name}</p>}
                   </div>
-                  {localFileName && <Check className="h-5 w-5 text-white" />}
+                  {localFile && <Check className="h-5 w-5 text-white" />}
               </button>
           </div>
         </div>

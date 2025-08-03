@@ -7,7 +7,7 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Music, Timer, Pause, Play, RotateCcw } from 'lucide-react';
+import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward } from 'lucide-react';
 import Image from 'next/image';
 
 function formatTime(seconds: number) {
@@ -23,8 +23,10 @@ export default function TaskSessionPage() {
   const [task, setTask] = React.useState<Task | null>(null);
   const [timeLeft, setTimeLeft] = React.useState(0);
   const [isCompleted, setIsCompleted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(false);
+  const [isPaused, setIsPaused] = React.useState(true); // Start paused
   const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
+  const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
 
   const taskId = params.taskId as string;
   
@@ -42,6 +44,15 @@ export default function TaskSessionPage() {
       if (currentTask.completed) {
         setIsCompleted(true);
       }
+      
+      if (currentTask.music) {
+        if (currentTask.music.fileDataUrl) {
+           setMusicUrl(currentTask.music.fileDataUrl);
+        } else if (currentTask.music.id) {
+           setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+        }
+      }
+
     } else {
       // Handle task not found, maybe redirect
       router.push('/');
@@ -65,13 +76,13 @@ export default function TaskSessionPage() {
 
   React.useEffect(() => {
     if (audioRef.current) {
-        if (!isCompleted && task?.music && !isPaused) {
+        if (isAudioPlaying && !isCompleted) {
             audioRef.current.play().catch(e => console.error("Audio play failed", e));
         } else {
             audioRef.current.pause();
         }
     }
-  }, [isCompleted, isPaused, task?.music])
+  }, [isAudioPlaying, isCompleted]);
 
 
   const handleCompleteTask = () => {
@@ -83,16 +94,33 @@ export default function TaskSessionPage() {
 
   const handleResetTimer = () => {
     setTimeLeft(initialDuration);
-    setIsPaused(false);
+    setIsPaused(true);
+    if(audioRef.current) {
+        audioRef.current.currentTime = 0;
+        setIsAudioPlaying(false);
+    }
   };
-  
+
+  const handleAudioPlayPause = () => {
+    setIsAudioPlaying(!isAudioPlaying);
+  };
+
+  const handleAudioSeek = (amount: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime += amount;
+    }
+  };
+
+  const handleAudioReset = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
 
   if (!task) {
     return <div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div>;
   }
   
-  const musicUrl = task.music?.id ? `/music/${task.music.id}.mp3` : null;
-
   return (
     <div className="relative h-dvh w-full">
       <Image
@@ -148,10 +176,32 @@ export default function TaskSessionPage() {
             )}
 
             {task.music && musicUrl && (
-                <div className="mt-6 flex items-center justify-center gap-2 text-white/70">
-                    <Music className="h-4 w-4" />
-                    <p>Playing: {task.music.title}</p>
-                    <audio ref={audioRef} src={musicUrl} loop />
+                <div className="mt-6 text-white/70">
+                    <div className="flex items-center justify-center gap-2">
+                        <Music className="h-4 w-4" />
+                        <p className="truncate max-w-[200px]">Playing: {task.music.title}</p>
+                    </div>
+                    <div className="flex justify-center items-center gap-2 mt-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
+                           <Rewind className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
+                           {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={handleAudioReset}>
+                           <RotateCcw className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
+                           <FastForward className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    <audio 
+                        ref={audioRef} 
+                        src={musicUrl}
+                        onPlay={() => setIsAudioPlaying(true)}
+                        onPause={() => setIsAudioPlaying(false)}
+                        loop 
+                    />
                 </div>
             )}
           </CardContent>
