@@ -1,10 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { TaskProvider } from '@/context/task-context';
 import { ThemeProvider } from '@/context/theme-context';
-import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
   title: 'Task Forest',
@@ -32,11 +32,9 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased')}>
         <ThemeProvider>
-          <AuthProvider>
             <TaskProvider>
                 {children}
             </TaskProvider>
-          </AuthProvider>
         </ThemeProvider>
         <Toaster />
       </body>
