@@ -91,7 +91,7 @@ export function AppSidebar() {
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger>
                   <Link
                     href={item.href}
                     data-active={pathname === item.href}
