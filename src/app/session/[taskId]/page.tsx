@@ -91,11 +91,14 @@ export default function TaskSessionPage() {
       
       if (currentTask.music) {
         if (currentTask.music.id) {
-            const custom = musicLibrary.find(m => m.id === currentTask.music?.id);
-            if (custom) {
-                setMusicUrl(custom.url);
+            const standardMusic = meditationMusic.find(m => m.id === currentTask.music?.id);
+            if (standardMusic) {
+                 setMusicUrl(`/music/${currentTask.music.id}.mp3`);
             } else {
-                setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+                 const custom = musicLibrary.find(m => m.id === currentTask.music?.id);
+                 if (custom) {
+                    setMusicUrl(custom.url);
+                 }
             }
         }
       }
@@ -108,9 +111,6 @@ export default function TaskSessionPage() {
   React.useEffect(() => {
     if (task && !task.completed) {
       setIsActive(true);
-      if (task.music) {
-        setIsAudioPlaying(true);
-      }
     }
   }, [task]);
 
@@ -124,6 +124,9 @@ export default function TaskSessionPage() {
     } else if (timeLeft === 0 && isActive) {
       // Timer finished
       setIsActive(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
       if (sessionType === 'work') {
         setIsSessionCompleted(true);
         setPomodoroCount(prev => prev + 1);
@@ -140,17 +143,23 @@ export default function TaskSessionPage() {
     }
 
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft, sessionType, pomodoroCount, durations]);
+  }, [isActive, timeLeft]);
 
   React.useEffect(() => {
     if (audioRef.current) {
-        if (isAudioPlaying && !isSessionCompleted) {
+        if (isActive && isAudioPlaying) {
             audioRef.current.play().catch(e => console.error("Audio play failed", e));
         } else {
             audioRef.current.pause();
         }
     }
-  }, [isAudioPlaying, isSessionCompleted, musicUrl]);
+  }, [isActive, isAudioPlaying, musicUrl]);
+  
+  React.useEffect(() => {
+    if (task?.music) {
+        setIsAudioPlaying(isActive);
+    }
+  }, [isActive, task?.music]);
 
 
   const handleCompleteTask = () => {
@@ -163,9 +172,6 @@ export default function TaskSessionPage() {
   const handleToggleTimer = () => {
     if (!task?.completed) {
         setIsActive(!isActive);
-        if (task?.music) {
-            setIsAudioPlaying(!isActive);
-        }
     }
   };
 
@@ -180,7 +186,9 @@ export default function TaskSessionPage() {
   };
 
   const handleAudioPlayPause = () => {
-    setIsAudioPlaying(!isAudioPlaying);
+    if (isActive) {
+      setIsAudioPlaying(!isAudioPlaying);
+    }
   };
 
   const handleAudioSeek = (amount: number) => {
@@ -358,7 +366,10 @@ export default function TaskSessionPage() {
                           src={musicUrl}
                           onPlay={() => setIsAudioPlaying(true)}
                           onPause={() => setIsAudioPlaying(false)}
-                          onEnded={() => setIsAudioPlaying(false)}
+                          onEnded={() => {
+                            if (audioRef.current) audioRef.current.currentTime = 0;
+                            setIsAudioPlaying(false);
+                          }}
                           loop 
                       />
                   </div>
@@ -370,5 +381,3 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
-
-    

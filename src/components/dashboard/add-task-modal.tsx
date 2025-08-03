@@ -252,7 +252,8 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 id="duration"
                 type="number"
                 value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+                onChange={(e) => setDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                min={5}
                 className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
             />
         </div>
@@ -397,7 +398,8 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
             id="duration"
             type="number"
             value={duration}
-            onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+            onChange={(e) => setDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+            min={5}
             className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
         />
       </div>
