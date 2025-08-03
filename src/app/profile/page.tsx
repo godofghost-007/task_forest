@@ -33,7 +33,7 @@ export interface UserProfile {
 export default function ProfilePage() {
   const { tasks } = useTasks();
   const { backgroundLibrary, addBackgroundToLibrary, removeBackground, setPomodoroBackground, setTaskSessionBackground, isUploading: isBgUploading } = useBackgrounds();
-  const { musicLibrary, addMusicToLibrary, removeMusic, isUploading: isMusicUploading } = useMusic();
+  const { musicLibrary, addMusicToLibrary, removeMusic, isUploading: isMusicUploading, setPomodoroMusic, setTaskSessionMusic } = useMusic();
   
   const bgFileInputRef = useRef<HTMLInputElement>(null);
   const musicFileInputRef = useRef<HTMLInputElement>(null);
@@ -281,23 +281,38 @@ export default function ProfilePage() {
                                             <Music className="h-5 w-5 text-primary" />
                                             <p className="font-medium text-sm truncate">{music.title}</p>
                                         </div>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will permanently delete the music from your library.
-                                                </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => removeMusic(music)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <div className="flex items-center gap-1">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="sm">Apply</Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-48">
+                                                    <div className="grid gap-2">
+                                                        <Label className="text-xs font-bold text-muted-foreground">APPLY TO</Label>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => setPomodoroMusic(music)}>Pomodoro</Button>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => setTaskSessionMusic(music)}>Task Session</Button>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setPomodoroMusic(null); setTaskSessionMusic(null); }}>Remove All</Button>
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will permanently delete the music from your library.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => removeMusic(music)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -387,5 +402,7 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
+
+    
 
     

@@ -40,7 +40,7 @@ export default function TaskSessionPage() {
   const params = useParams();
   const { tasks, completeTask } = useTasks();
   const { taskSessionBackground, setTaskSessionBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
-  const { musicLibrary } = useMusic();
+  const { musicLibrary, taskSessionMusic } = useMusic();
   const [task, setTask] = React.useState<Task | null>(null);
   const bgFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -55,6 +55,7 @@ export default function TaskSessionPage() {
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
+  const [music, setMusic] = React.useState<any | null>(null);
 
   const taskId = params.taskId as string;
   
@@ -90,24 +91,30 @@ export default function TaskSessionPage() {
         setIsActive(false);
       }
       
-      if (currentTask.music) {
-        if (currentTask.music.id) {
-            const standardMusic = meditationMusic.find(m => m.id === currentTask.music?.id);
+      const musicToPlay = taskSessionMusic || currentTask.music;
+      if (musicToPlay) {
+        if (musicToPlay.id) {
+            const standardMusic = meditationMusic.find(m => m.id === musicToPlay.id);
             if (standardMusic) {
-                 setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+                 setMusicUrl(`/music/${musicToPlay.id}.mp3`);
+                 setMusic(standardMusic);
             } else {
-                 const custom = musicLibrary.find(m => m.id === currentTask.music?.id);
+                 const custom = musicLibrary.find(m => m.id === musicToPlay.id);
                  if (custom) {
                     setMusicUrl(custom.url);
+                    setMusic(custom);
                  }
             }
         }
+      } else {
+        setMusicUrl(null);
+        setMusic(null);
       }
 
     } else {
       router.push('/');
     }
-  }, [taskId, tasks, router, musicLibrary]);
+  }, [taskId, tasks, router, musicLibrary, taskSessionMusic]);
 
   React.useEffect(() => {
     if (task && !task.completed) {
@@ -145,18 +152,16 @@ export default function TaskSessionPage() {
   }, [isActive, timeLeft, sessionType, durations, pomodoroCount]);
   
   React.useEffect(() => {
-    if (task?.music) {
-        const shouldPlay = isActive && musicUrl;
-        if (audioRef.current) {
-            if (shouldPlay) {
-                audioRef.current.play().catch(e => console.error("Audio play failed", e));
-            } else {
-                audioRef.current.pause();
-            }
-        }
-        setIsAudioPlaying(shouldPlay);
-    }
-  }, [isActive, task?.music, musicUrl]);
+      const shouldPlay = isActive && musicUrl;
+      if (audioRef.current) {
+          if (shouldPlay) {
+              audioRef.current.play().catch(e => console.error("Audio play failed", e));
+          } else {
+              audioRef.current.pause();
+          }
+      }
+      setIsAudioPlaying(!!shouldPlay);
+  }, [isActive, musicUrl]);
 
 
   const handleCompleteTask = () => {
@@ -334,11 +339,11 @@ export default function TaskSessionPage() {
                   </div>
               )}
 
-              {task.music && musicUrl && sessionType === 'work' && (
+              {musicUrl && sessionType === 'work' && (
                   <div className="mt-2 text-white/70">
                       <div className="flex items-center justify-center gap-2">
                           <Music className="h-4 w-4" />
-                          <p className="truncate max-w-[200px]">Playing: {task.music.title}</p>
+                          <p className="truncate max-w-[200px]">Playing: {music?.title}</p>
                       </div>
                       <div className="flex justify-center items-center gap-2 mt-1">
                           <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
@@ -375,3 +380,5 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
+
+    

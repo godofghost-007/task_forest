@@ -41,7 +41,7 @@ export default function PomodoroPage() {
   const router = useRouter();
   const { addTask } = useTasks();
   const { pomodoroBackground, setPomodoroBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
-  const { musicLibrary } = useMusic();
+  const { musicLibrary, pomodoroMusic } = useMusic();
   const bgFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pomodoro State
@@ -81,6 +81,15 @@ export default function PomodoroPage() {
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [selectedMusicId, setSelectedMusicId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (pomodoroMusic) {
+      setSelectedMusicId(pomodoroMusic.id);
+    } else if (selectedMusicId) {
+      // If pomodoroMusic is cleared, unset selectedMusicId as well
+      setSelectedMusicId(null);
+    }
+  }, [pomodoroMusic]);
 
   React.useEffect(() => {
     if (selectedMusicId) {
@@ -466,3 +475,5 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
+
+    
