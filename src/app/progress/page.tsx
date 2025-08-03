@@ -30,30 +30,39 @@ const getLast7Days = () => {
 
 export default function ProgressPage() {
   const { tasks } = useTasks();
+  const [chartData, setChartData] = React.useState<any[]>([]);
 
   const completedTasks = tasks.filter((task) => task.completed);
   const totalTasks = tasks.length;
   const completionPercentage = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
 
-  const last7Days = getLast7Days();
+  React.useEffect(() => {
+    const last7Days = getLast7Days();
 
-  // This is a placeholder for real completion data over time.
-  // In a real app, you'd store completion dates for each task.
-  const data = last7Days.map((day, index) => {
-    // Simple mock data logic
-    let completedCount = 0;
-    if (index === 6) { // Today
-      completedCount = completedTasks.length;
-    } else if (index === 5) {
-        completedCount = Math.floor(Math.random() * (totalTasks/2));
-    } else {
+    // This is a placeholder for real completion data over time.
+    // In a real app, you'd store completion dates for each task.
+    const data = last7Days.map((day, index) => {
+      // Simple mock data logic
+      let completedCount = 0;
+      if (index === 6) { // Today
+        // For today, we use the actual completed tasks from context
+        completedCount = completedTasks.length;
+      } else if (index === 5) {
+        // Mock data for yesterday
+        completedCount = Math.floor(Math.random() * (tasks.filter(t => !t.completed).length / 2 + 1));
+      } else {
+        // Mock data for other past days
         completedCount = Math.floor(Math.random() * 3);
-    }
-    return {
-      name: day.name,
-      total: completedCount,
-    };
-  });
+      }
+      return {
+        name: day.name,
+        total: completedCount,
+      };
+    });
+
+    setChartData(data);
+  }, [tasks]);
+
 
   return (
     <div className="h-full w-full bg-secondary p-4 sm:p-8">
@@ -92,7 +101,7 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent className="pl-2">
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data}>
+                <BarChart data={chartData}>
                   <XAxis
                     dataKey="name"
                     stroke="#888888"
