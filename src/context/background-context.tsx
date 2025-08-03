@@ -77,33 +77,48 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
 
   const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { file: File }, andApply = false) => {
     setIsUploading(true);
-    try {
-        const id = `bg-${Date.now()}`;
-        const fileExtension = background.title.split('.').pop() || 'file';
-        const storagePath = `backgrounds/${id}.${fileExtension}`;
-        const storageRef = ref(storage, storagePath);
+    const id = `bg-${Date.now()}`;
+    const fileExtension = background.file.name.split('.').pop() || 'file';
+    const storagePath = `backgrounds/${id}.${fileExtension}`;
+    const localUrl = URL.createObjectURL(background.file);
 
+    // Optimistic update
+    const optimisticBackground: Background = {
+      id,
+      type: background.type,
+      title: background.title,
+      url: localUrl,
+      path: storagePath,
+    };
+    
+    const newLibrary = [optimisticBackground, ...backgroundLibrary];
+    updateLibrary(newLibrary);
+
+    if (andApply) {
+      setPomodoroBackground(optimisticBackground);
+    }
+
+    try {
+        const storageRef = ref(storage, storagePath);
         await uploadBytes(storageRef, background.file);
         const downloadUrl = await getDownloadURL(storageRef);
 
-        const newBackground: Background = {
-            id,
-            type: background.type,
-            title: background.title,
-            url: downloadUrl,
-            path: storagePath,
-        };
+        // Final update with permanent URL
+        const finalBackground: Background = { ...optimisticBackground, url: downloadUrl };
+        const finalLibrary = backgroundLibrary.map(bg => bg.id === id ? finalBackground : bg);
+        updateLibrary(finalLibrary);
         
-        updateLibrary([newBackground, ...backgroundLibrary]);
-
         if (andApply) {
-            setPomodoroBackground(newBackground);
+          setPomodoroBackground(finalBackground);
         }
 
+        URL.revokeObjectURL(localUrl); // Clean up local URL
         toast({ title: 'Success', description: 'Background uploaded to your library.' });
     } catch (error) {
         console.error("Error uploading background:", error);
-        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the background. Please try again.' });
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the background. It has been removed from the library.' });
+        // Rollback on failure
+        updateLibrary(backgroundLibrary.filter(bg => bg.id !== id));
     } finally {
         setIsUploading(false);
     }
@@ -111,8 +126,11 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
 
   const removeBackground = async (background: Background) => {
     try {
-        const storageRef = ref(storage, background.path);
-        await deleteObject(storageRef);
+        // Do not delete from storage if it's a blob URL
+        if (!background.url.startsWith('blob:')) {
+            const storageRef = ref(storage, background.path);
+            await deleteObject(storageRef);
+        }
 
         const newLibrary = backgroundLibrary.filter(bg => bg.id !== background.id);
         updateLibrary(newLibrary);
@@ -128,6 +146,10 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Success', description: 'Background removed from your library.' });
     } catch(error) {
         console.error("Error deleting background:", error);
+        // Add item back to library if deletion fails, unless it's a blob URL which is temporary
+        if (!background.url.startsWith('blob:')) {
+            updateLibrary([background, ...backgroundLibrary]);
+        }
         toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not remove the background. Please try again.' });
     }
   }

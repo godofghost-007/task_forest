@@ -47,27 +47,38 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   const addMusicToLibrary = async (music: { title: string, file: File }) => {
     setIsUploading(true);
-    try {
-        const id = `music-${Date.now()}`;
-        const fileExtension = music.title.split('.').pop() || 'mp3';
-        const storagePath = `music/${id}.${fileExtension}`;
-        const storageRef = ref(storage, storagePath);
+    const id = `music-${Date.now()}`;
+    const fileExtension = music.file.name.split('.').pop() || 'mp3';
+    const storagePath = `music/${id}.${fileExtension}`;
+    const localUrl = URL.createObjectURL(music.file);
 
+    // Optimistic update
+    const optimisticMusicFile: MusicFile = {
+        id,
+        title: music.title,
+        url: localUrl,
+        path: storagePath,
+    };
+
+    updateLibrary([...musicLibrary, optimisticMusicFile]);
+    
+    try {
+        const storageRef = ref(storage, storagePath);
         await uploadBytes(storageRef, music.file);
         const downloadUrl = await getDownloadURL(storageRef);
         
-        const newMusicFile: MusicFile = {
-            id,
-            title: music.title,
-            url: downloadUrl,
-            path: storagePath,
-        };
-
-        updateLibrary([...musicLibrary, newMusicFile]);
+        // Final update
+        const finalMusicFile: MusicFile = { ...optimisticMusicFile, url: downloadUrl };
+        const finalLibrary = musicLibrary.map(m => m.id === id ? finalMusicFile : m);
+        updateLibrary(finalLibrary);
+        
+        URL.revokeObjectURL(localUrl); // Clean up
         toast({ title: 'Success', description: 'Music uploaded to your library.' });
     } catch (error) {
         console.error("Error uploading music:", error);
-        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload music. Please try again.' });
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload music. It has been removed.' });
+        // Rollback
+        updateLibrary(musicLibrary.filter(m => m.id !== id));
     } finally {
         setIsUploading(false);
     }
@@ -75,14 +86,19 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   const removeMusic = async (musicFile: MusicFile) => {
     try {
-        const storageRef = ref(storage, musicFile.path);
-        await deleteObject(storageRef);
+        if (!musicFile.url.startsWith('blob:')) {
+            const storageRef = ref(storage, musicFile.path);
+            await deleteObject(storageRef);
+        }
 
         const newLibrary = musicLibrary.filter(m => m.id !== musicFile.id);
         updateLibrary(newLibrary);
         toast({ title: 'Success', description: 'Music removed from your library.' });
     } catch (error) {
         console.error("Error deleting music:", error);
+         if (!musicFile.url.startsWith('blob:')) {
+            updateLibrary([musicFile, ...musicLibrary]);
+        }
         toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not remove music. Please try again.' });
     }
   }
