@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { format } from 'date-fns';
 
 // Using an interface for the task to match task-item.tsx
 export interface Task {
@@ -19,6 +20,7 @@ export interface Task {
     title: string;
     duration: string;
   };
+  date: string; // YYYY-MM-DD
 }
 
 interface TaskContextType {
@@ -28,9 +30,13 @@ interface TaskContextType {
   isTaskModalOpen: boolean;
   setTaskModalOpen: (isOpen: boolean) => void;
   closeTaskModal: () => void;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
+
+const today = format(new Date(), 'yyyy-MM-dd');
 
 const initialTasks: Task[] = [
   {
@@ -41,6 +47,7 @@ const initialTasks: Task[] = [
     subtitle: 'Daily',
     completed: false,
     duration: 5,
+    date: today,
   },
   {
     id: '2',
@@ -51,6 +58,7 @@ const initialTasks: Task[] = [
     completed: false,
     time: '10:00',
     duration: 10,
+    date: today,
   },
   {
     id: '3',
@@ -66,7 +74,8 @@ const initialTasks: Task[] = [
       id: '2',
       title: 'Gentle Stream',
       duration: '15:00',
-    }
+    },
+    date: today,
   },
   {
     id: '4',
@@ -76,6 +85,7 @@ const initialTasks: Task[] = [
     subtitle: 'Daily*',
     completed: false,
     duration: 25,
+    date: today,
   },
   {
     id: '5',
@@ -85,6 +95,7 @@ const initialTasks: Task[] = [
     subtitle: 'Weekly*',
     completed: false,
     duration: 60,
+    date: today,
   },
   {
     id: '6',
@@ -94,12 +105,14 @@ const initialTasks: Task[] = [
     subtitle: 'Daily*',
     completed: false,
     duration: 1,
+    date: today,
   },
 ];
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(today);
 
   const addTask = (task: Task) => {
     setTasks((prevTasks) => [...prevTasks, task]);
@@ -118,7 +131,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal }}>
+    <TaskContext.Provider value={{ tasks, addTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
       {children}
     </TaskContext.Provider>
   );

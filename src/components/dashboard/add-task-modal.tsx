@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef } from 'react';
 import {
@@ -26,11 +27,15 @@ import {
   ArrowLeft,
   Music,
   BookOpen,
+  CalendarIcon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 
 const healthTasks = [
@@ -79,7 +84,7 @@ const iconMap: { [key: string]: React.ElementType } = {
 import { Label } from '../ui/label';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
-  const { addTask } = useTasks();
+  const { addTask, selectedDate } = useTasks();
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(meditationMusic[0]);
   const [localFileName, setLocalFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +108,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       showPlay: true,
       music: musicData,
       duration: parseInt(musicData?.duration || '10', 10), // Default duration
+      date: selectedDate,
     });
     onClose();
   };
@@ -180,7 +186,8 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
 
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
-  const { addTask } = useTasks();
+  const { addTask, selectedDate } = useTasks();
+  const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
@@ -202,7 +209,8 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
       time: time,
       duration: duration,
       music: musicData,
-      showPlay: !!musicData
+      showPlay: !!musicData,
+      date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
     });
     onClose();
   };
@@ -221,7 +229,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
        <div className="flex items-center">
         <Button variant="ghost" size="icon" className="mr-2 text-white hover:bg-white/20 hover:text-white" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
@@ -232,6 +240,31 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
           <Icon className="h-16 w-16 text-white" />
        </div>
       <div className="space-y-4">
+        <div>
+          <Label htmlFor="date" className="text-white/80">Date</Label>
+           <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-white/20 text-white placeholder:text-white/70 border-white/30",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+        </div>
         <div>
             <Label htmlFor="time" className="text-white/80">Time</Label>
             <Input 
@@ -307,12 +340,13 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 
 
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
+  const { addTask, selectedDate } = useTasks();
   const [title, setTitle] = useState('');
-  const { addTask } = useTasks();
   const [duration, setDuration] = useState(10);
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
   const [localFileName, setLocalFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
 
   const handleAddTask = () => {
     if (title.trim()) {
@@ -329,7 +363,8 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         completed: false,
         duration: duration,
         music: musicData,
-        showPlay: !!musicData
+        showPlay: !!musicData,
+        date: date ? format(date, 'yyyy-MM-dd') : selectedDate,
       });
       setTitle('');
       onClose();
@@ -349,7 +384,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
 
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
        <div className="flex items-center">
         <Button variant="ghost" size="icon" className="mr-2 text-white hover:bg-white/20 hover:text-white" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
@@ -365,6 +400,31 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
+      <div>
+        <Label htmlFor="date" className="text-white/80">Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-full justify-start text-left font-normal bg-white/20 text-white placeholder:text-white/70 border-white/30",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
       <div>
         <Label htmlFor="duration" className="text-white/80">Duration (minutes)</Label>
         <Input 
@@ -430,8 +490,11 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
 
 function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void, onMusicClick: (task: Partial<Task>) => void }) {
   const getIconName = (IconComponent: React.ElementType) => {
-    const iconName = Object.keys(iconMap).find(key => iconMap[key] === IconComponent);
-    return iconName || 'Pencil'; // Fallback icon
+    if (typeof IconComponent !== 'string') {
+        const iconName = Object.keys(iconMap).find(key => iconMap[key] === IconComponent);
+        return iconName || 'Pencil'; // Fallback icon
+    }
+    return IconComponent;
   };
   
   const handleHealthTaskClick = (task: {name: string, icon: React.ElementType, indicator?: string}) => {

@@ -5,14 +5,16 @@ import { TaskItem } from './task-item';
 import Link from 'next/link';
 
 export function TaskGrid() {
-  const { tasks } = useTasks();
+  const { tasks, selectedDate } = useTasks();
 
-  if (tasks.length === 0) {
+  const filteredTasks = tasks.filter(task => task.date === selectedDate);
+
+  if (filteredTasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/5 p-12 text-center text-white">
-        <h3 className="font-headline text-lg font-semibold">No tasks yet!</h3>
+        <h3 className="font-headline text-lg font-semibold">No tasks for this day!</h3>
         <p className="text-sm text-white/70">
-          Click "New Task" to add your first goal.
+          Select another day or add a new task.
         </p>
       </div>
     );
@@ -20,7 +22,7 @@ export function TaskGrid() {
 
   return (
     <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
-      {tasks.map((task) => (
+      {filteredTasks.map((task) => (
         <Link key={task.id} href={`/session/${task.id}`} className="no-underline">
           <TaskItem
             {...task}
