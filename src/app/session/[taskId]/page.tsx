@@ -24,7 +24,7 @@ export default function TaskSessionPage() {
   const [task, setTask] = React.useState<Task | null>(null);
   const [timeLeft, setTimeLeft] = React.useState(0);
   const [isSessionCompleted, setIsSessionCompleted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(false);
+  const [isPaused, setIsPaused] = React.useState(true);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
@@ -49,6 +49,9 @@ export default function TaskSessionPage() {
         setIsPaused(true);
       } else {
         setIsPaused(false); // Auto-start timer
+        if (currentTask.music) {
+            setIsAudioPlaying(true);
+        }
       }
       
       if (currentTask.music) {
@@ -56,9 +59,6 @@ export default function TaskSessionPage() {
            setMusicUrl(currentTask.music.fileDataUrl);
         } else if (currentTask.music.id) {
            setMusicUrl(`/music/${currentTask.music.id}.mp3`);
-        }
-        if (!currentTask.completed) {
-          setIsAudioPlaying(true); // Auto-start music
         }
       }
 
@@ -70,6 +70,7 @@ export default function TaskSessionPage() {
   React.useEffect(() => {
     if (timeLeft <= 0 && task && !task.completed) {
       setIsSessionCompleted(true);
+      setIsPaused(true);
       setIsAudioPlaying(false); // Stop music
       return;
     }
@@ -115,7 +116,9 @@ export default function TaskSessionPage() {
   const handleTogglePause = () => {
     if (!task?.completed && !isSessionCompleted) {
        setIsPaused(!isPaused);
-       setIsAudioPlaying(!isAudioPlaying);
+       if (task?.music) {
+        setIsAudioPlaying(!isPaused);
+       }
     }
   }
 
@@ -153,11 +156,13 @@ export default function TaskSessionPage() {
       />
       <div className="absolute inset-0 bg-black/50" />
       
-      <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+      <div className="relative z-10 flex h-full flex-col items-center justify-between p-4 text-white">
         
+        <div />
+
         <PlantGrowth progress={progress} />
 
-        <Card className="w-full max-w-md bg-black/30 text-white backdrop-blur-sm border-white/20 mt-4">
+        <Card className="w-full max-w-md bg-black/30 text-white backdrop-blur-sm border-white/20">
           <CardContent className="p-6 text-center">
             <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
             <p className="text-white/80">{task.subtitle}</p>
