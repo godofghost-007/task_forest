@@ -23,7 +23,7 @@ export default function TaskSessionPage() {
   const [task, setTask] = React.useState<Task | null>(null);
   const [timeLeft, setTimeLeft] = React.useState(0);
   const [isCompleted, setIsCompleted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(true); // Start paused
+  const [isPaused, setIsPaused] = React.useState(false); // Start playing
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
@@ -43,6 +43,7 @@ export default function TaskSessionPage() {
       setTimeLeft((currentTask.duration || 0) * 60);
       if (currentTask.completed) {
         setIsCompleted(true);
+        setIsPaused(true);
       }
       
       if (currentTask.music) {
@@ -50,6 +51,9 @@ export default function TaskSessionPage() {
            setMusicUrl(currentTask.music.fileDataUrl);
         } else if (currentTask.music.id) {
            setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+        }
+        if (!currentTask.completed) {
+          setIsAudioPlaying(true);
         }
       }
 
