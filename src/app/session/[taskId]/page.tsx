@@ -194,7 +194,6 @@ export default function TaskSessionPage() {
               className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
               style={{ 
                   backgroundImage: `url('${background.url}')`, 
-                  filter: 'blur(4px)'
               }}
               data-ai-hint={background.hint || 'background'}
             />
@@ -205,7 +204,6 @@ export default function TaskSessionPage() {
                 autoPlay
                 loop
                 muted
-                style={{ filter: 'blur(4px)'}}
             />
           )}
         <div className="absolute inset-0 bg-black/50" />

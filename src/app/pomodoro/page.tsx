@@ -220,8 +220,7 @@ export default function PomodoroPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
           style={{ 
-              backgroundImage: `url('${background.url}')`, 
-              filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`
+              backgroundImage: `url('${background.url}')`,
           }}
           data-ai-hint={background.hint || 'background'}
         />
@@ -232,7 +231,6 @@ export default function PomodoroPage() {
             autoPlay
             loop
             muted
-            style={{ filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`}}
         />
       )}
       <div className={cn(
