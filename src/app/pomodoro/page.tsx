@@ -40,6 +40,7 @@ export default function PomodoroPage() {
   const [timeLeft, setTimeLeft] = React.useState(durations.work);
   const [isActive, setIsActive] = React.useState(false);
   const [pomodoroCount, setPomodoroCount] = React.useState(0);
+  const [longBreakInterval, setLongBreakInterval] = React.useState(4);
   
   // Temp state for settings popover
   const [tempDurations, setTempDurations] = React.useState({
@@ -47,6 +48,8 @@ export default function PomodoroPage() {
       shortBreak: 5,
       longBreak: 15,
   });
+  const [tempLongBreakInterval, setTempLongBreakInterval] = React.useState(4);
+
 
   // Music State
   const [music, setMusic] = React.useState<any | null>(null);
@@ -99,14 +102,14 @@ export default function PomodoroPage() {
             date: format(new Date(), 'yyyy-MM-dd'),
         });
 
-        const nextSession: SessionType = newPomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
+        const nextSession: SessionType = newPomodoroCount % longBreakInterval === 0 ? 'longBreak' : 'shortBreak';
         setSessionType(nextSession);
       } else { // Break finished
         setSessionType('work');
       }
     }
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft, sessionType, pomodoroCount, durations, addTask]);
+  }, [isActive, timeLeft, sessionType, pomodoroCount, durations, addTask, longBreakInterval]);
 
   React.useEffect(() => {
     if (audioRef.current) {
@@ -135,6 +138,7 @@ export default function PomodoroPage() {
         longBreak: tempDurations.longBreak * 60,
     };
     setDurations(newDurations);
+    setLongBreakInterval(tempLongBreakInterval);
     if (!isActive) {
         setTimeLeft(newDurations[sessionType]);
     }
@@ -252,6 +256,17 @@ export default function PomodoroPage() {
                                     defaultValue={tempDurations.longBreak}
                                     onChange={(e) => setTempDurations(d => ({...d, longBreak: parseInt(e.target.value, 10)}))}
                                     className="col-span-2 h-8"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="long-break-interval">Long Break Interval</Label>
+                                <Input
+                                    id="long-break-interval"
+                                    type="number"
+                                    defaultValue={tempLongBreakInterval}
+                                    onChange={(e) => setTempLongBreakInterval(parseInt(e.target.value, 10))}
+                                    className="col-span-2 h-8"
+                                    min={1}
                                 />
                             </div>
                         </div>
