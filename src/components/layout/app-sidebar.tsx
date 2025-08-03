@@ -28,13 +28,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/progress', icon: TrendingUp, label: 'Progress' },
   { href: '/forest', icon: Trees, label: 'Forest' },
-  { href: '/social', icon: Users, label: 'Social' },
   { href: '/profile', icon: UserCircle, label: 'Profile' },
 ];
 

@@ -26,8 +26,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { mockUsers } from '@/lib/mock-data'; // Import mock users for validation
-
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -92,20 +90,8 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
   };
   
   const onSubmit = (data: UserProfile) => {
-    // In a real app, you would get the current user's ID to exclude it from the check.
-    // For now, we check against all mock users.
-    const isUsernameTaken = mockUsers.some(
-        (user) => user.username === data.username && user.email !== userProfile.email
-    );
-
-    if (isUsernameTaken) {
-        setError('username', {
-            type: 'manual',
-            message: 'This username is already taken. Please choose another.',
-        });
-        return;
-    }
-
+    // NOTE: Username uniqueness validation has been removed as it depended on mock data.
+    // In a real application, you would perform a server-side check here.
     onSave(data);
     setOpen(false);
   };
