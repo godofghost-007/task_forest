@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -39,6 +40,7 @@ export default function ProgressPage() {
 
   React.useEffect(() => {
     const last7Days = getLast7Days();
+    const dailyCompletedTasks = tasks.filter((task) => task.completed);
 
     // This is a placeholder for real completion data over time.
     // In a real app, you'd store completion dates for each task.
@@ -47,7 +49,7 @@ export default function ProgressPage() {
       let completedCount = 0;
       if (index === 6) { // Today
         // For today, we use the actual completed tasks from context
-        completedCount = completedTasks.length;
+        completedCount = dailyCompletedTasks.length;
       } else if (index === 5) {
         // Mock data for yesterday
         completedCount = Math.floor(Math.random() * (tasks.filter(t => !t.completed).length / 2 + 1));
@@ -62,7 +64,7 @@ export default function ProgressPage() {
     });
 
     setChartData(data);
-  }, [tasks, completedTasks]);
+  }, [tasks]);
 
 
   return (
