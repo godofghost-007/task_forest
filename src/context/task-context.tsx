@@ -13,6 +13,10 @@ export interface Task {
   completed?: boolean;
   time?: string;
   duration?: number;
+  music?: {
+    title: string;
+    duration: string;
+  };
 }
 
 interface TaskContextType {

@@ -25,10 +25,13 @@ import {
   X,
   Plus,
   ArrowLeft,
+  Music,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
+import { cn } from '@/lib/utils';
+
 
 const actionIcons = [
   { icon: Check, label: 'Completion' },
@@ -59,6 +62,14 @@ const healthTasks = [
   { icon: Dumbbell, name: 'Exercise Minutes', indicator: 'green' },
 ];
 
+const meditationMusic = [
+    { id: '1', title: 'Quiet Forest', duration: '10:00' },
+    { id: '2', title: 'Gentle Stream', duration: '15:00' },
+    { id: '3', title: 'Morning Birds', duration: '5:00' },
+    { id: '4', title: 'Rainfall', duration: '20:00' },
+    { id: '5', title: 'Ocean Waves', duration: '30:00' },
+];
+
 const iconMap: { [key: string]: React.ElementType } = {
   Footprints,
   Clock,
@@ -80,6 +91,60 @@ const iconMap: { [key: string]: React.ElementType } = {
 import * as Icons from 'lucide-react';
 import { RunIcon } from '@/components/icons/run-icon';
 import { Label } from '../ui/label';
+
+function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
+  const { addTask } = useTasks();
+  const [selectedMusic, setSelectedMusic] = useState(meditationMusic[0]);
+
+  const handleAddTask = () => {
+    addTask({
+      id: Date.now().toString(),
+      title: (task.title || 'Mindful Minutes').toUpperCase(),
+      subtitle: selectedMusic.title,
+      icon: task.icon || 'Heart',
+      streak: 0,
+      completed: false,
+      showPlay: true,
+      music: selectedMusic
+    });
+    onClose();
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center">
+        <Button variant="ghost" size="icon" className="mr-2 text-white hover:bg-white/20 hover:text-white" onClick={onBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h3 className="font-headline font-semibold text-white uppercase">{task.title}</h3>
+      </div>
+      <div className="space-y-2">
+        <h4 className="font-semibold text-white/90">Select Music</h4>
+        {meditationMusic.map((music) => (
+          <button
+            key={music.id}
+            onClick={() => setSelectedMusic(music)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
+              selectedMusic.id === music.id ? "bg-white/30" : "hover:bg-white/10"
+            )}
+          >
+            <div>
+              <p className="font-medium">{music.title}</p>
+              <p className="text-sm text-white/70">{music.duration}</p>
+            </div>
+            {selectedMusic.id === music.id && <Check className="h-5 w-5 text-white" />}
+          </button>
+        ))}
+      </div>
+      <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
+        <Plus className="h-5 w-5 mr-2" />
+        Add Task
+      </Button>
+    </div>
+  );
+}
+
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask } = useTasks();
@@ -188,13 +253,19 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   );
 }
 
-function DefaultView({ onCustomClick, onDetailsClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void }) {
+function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void, onMusicClick: (task: Partial<Task>) => void }) {
   const { addTask } = useTasks();
   
-  const handleHealthTaskClick = (taskName: string, iconName: string) => {
+  const handleHealthTaskClick = (task: {name: string, icon: React.ElementType, indicator?: string}) => {
+    const iconName = (task.icon as any).displayName || 'Heart';
+    if (task.name === 'Mindful Minutes') {
+      onMusicClick({ title: task.name, icon: iconName });
+      return;
+    }
+    
     addTask({
       id: Date.now().toString(),
-      title: taskName.toUpperCase(),
+      title: task.name.toUpperCase(),
       subtitle: 'Health Task',
       icon: iconName,
       streak: 0,
@@ -230,32 +301,37 @@ function DefaultView({ onCustomClick, onDetailsClick }: { onCustomClick: () => v
         </h3>
 
         <div className="space-y-2">
-          {healthTasks.map(({ icon: Icon, name, indicator }) => {
+          {healthTasks.map((task) => {
+            const { icon: Icon, name, indicator } = task;
             const iconName = (Icon as any).displayName || 'Heart';
             return (
-              <DialogClose asChild key={name}>
-                <div className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10">
-                  <button
-                    className="flex flex-1 items-center gap-4"
-                    onClick={() => handleHealthTaskClick(name, iconName)}
-                  >
-                    <Icon />
-                    <span className="flex-1 font-medium">{name}</span>
-                    {indicator && (
-                      <div
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: indicator }}
-                      />
-                    )}
-                  </button>
+                <div key={name} className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10">
+                  <DialogClose asChild={name !== 'Mindful Minutes'}>
+                    <button
+                        className="flex flex-1 items-center gap-4"
+                        onClick={() => handleHealthTaskClick(task)}
+                    >
+                        <Icon />
+                        <span className="flex-1 font-medium">{name}</span>
+                        {indicator && (
+                        <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: indicator }}
+                        />
+                        )}
+                    </button>
+                  </DialogClose>
                   <Button variant="ghost" size="icon" className="text-white/50 hover:bg-white/20 hover:text-white/80" onClick={(e) => {
                     e.stopPropagation();
-                    onDetailsClick({ title: name, icon: iconName });
+                    if (name === 'Mindful Minutes') {
+                        onMusicClick({ title: name, icon: iconName });
+                    } else {
+                        onDetailsClick({ title: name, icon: iconName });
+                    }
                   }}>
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                 </div>
-              </DialogClose>
             )
           })}
         </div>
@@ -265,7 +341,7 @@ function DefaultView({ onCustomClick, onDetailsClick }: { onCustomClick: () => v
 }
 
 export function AddTaskModal({ children }: { children: React.ReactNode }) {
-  const [view, setView] = useState<'default' | 'custom' | 'details'>('default');
+  const [view, setView] = useState<'default' | 'custom' | 'details' | 'musicSelection'>('default');
   const [selectedTask, setSelectedTask] = useState<Partial<Task> | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -273,6 +349,11 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
     setSelectedTask(task);
     setView('details');
   };
+
+  const handleMusicClick = (task: Partial<Task>) => {
+    setSelectedTask(task);
+    setView('musicSelection');
+  }
 
   const handleBack = () => {
     setView('default');
@@ -307,9 +388,10 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
           </div>
         </DialogHeader>
 
-        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} onDetailsClick={handleDetailsClick} />}
+        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} onDetailsClick={handleDetailsClick} onMusicClick={handleMusicClick} />}
         {view === 'custom' && <CustomTaskView onBack={handleBack} onClose={handleClose} />}
         {view === 'details' && selectedTask && <DetailsView task={selectedTask} onBack={handleBack} onClose={handleClose} />}
+        {view === 'musicSelection' && selectedTask && <MusicSelectionView task={selectedTask} onBack={handleBack} onClose={handleClose} />}
       </DialogContent>
     </Dialog>
   );

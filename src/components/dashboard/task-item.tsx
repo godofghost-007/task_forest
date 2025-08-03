@@ -1,5 +1,5 @@
 'use client';
-import { Check, Heart, HelpCircle, Play } from 'lucide-react';
+import { Check, Heart, HelpCircle, Play, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
 import { RunIcon } from '@/components/icons/run-icon';
@@ -25,6 +25,7 @@ export function TaskItem({
   completed,
   onComplete,
   time,
+  music
 }: TaskItemProps) {
   const Icon = useMemo(() => {
     if (icon === 'RunIcon') {
@@ -35,6 +36,16 @@ export function TaskItem({
     }
     return HelpCircle; // Fallback icon
   }, [icon]);
+  
+  const displaySubtitle = () => {
+    if (music) {
+      return `${music.title} - ${music.duration}`;
+    }
+    if (time) {
+      return `${time} - ${subtitle}`;
+    }
+    return subtitle;
+  }
 
   return (
     <div
@@ -61,7 +72,7 @@ export function TaskItem({
         )}
         {showPlay && !completed && (
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-            <Play className="h-10 w-10 text-white" fill="white" />
+            { music ? <Music className="h-10 w-10 text-white" /> : <Play className="h-10 w-10 text-white" fill="white" />}
           </div>
         )}
         {completed && (
@@ -81,7 +92,7 @@ export function TaskItem({
           />
           {title}
         </h3>
-        <p className="text-xs text-white/70">{time ? `${time} - ${subtitle}` : subtitle}</p>
+        <p className="text-xs text-white/70">{displaySubtitle()}</p>
       </div>
     </div>
   );
