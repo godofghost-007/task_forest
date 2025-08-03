@@ -2,17 +2,22 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { useToast } from '@/hooks/use-toast';
 
 export type MusicFile = {
     id: string;
     title: string;
     url: string;
+    path: string; // Firebase storage path
 };
 
 interface MusicContextType {
   musicLibrary: MusicFile[];
-  addMusicToLibrary: (music: MusicFile) => void;
-  removeMusic: (id: string) => void;
+  addMusicToLibrary: (music: { title: string, dataUrl: string }) => Promise<void>;
+  removeMusic: (musicFile: MusicFile) => Promise<void>;
+  isUploading: boolean;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -20,6 +25,8 @@ const MusicContext = createContext<MusicContextType | undefined>(undefined);
 export function MusicProvider({ children }: { children: ReactNode }) {
   const [musicLibrary, setMusicLibrary] = useState<MusicFile[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -33,20 +40,51 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  const addMusicToLibrary = (music: MusicFile) => {
-    setMusicLibrary((prevMusic) => {
-        const newMusic = [...prevMusic, music];
-        localStorage.setItem('musicLibrary', JSON.stringify(newMusic));
-        return newMusic;
-    });
+  const updateLibrary = (newLibrary: MusicFile[]) => {
+    setMusicLibrary(newLibrary);
+    localStorage.setItem('musicLibrary', JSON.stringify(newLibrary));
   };
 
-  const removeMusic = (id: string) => {
-    setMusicLibrary((prevMusic) => {
-        const newMusic = prevMusic.filter(m => m.id !== id);
-        localStorage.setItem('musicLibrary', JSON.stringify(newMusic));
-        return newMusic;
-    })
+  const addMusicToLibrary = async (music: { title: string, dataUrl: string }) => {
+    setIsUploading(true);
+    try {
+        const id = `music-${Date.now()}`;
+        const fileExtension = music.title.split('.').pop() || 'mp3';
+        const storagePath = `music/${id}.${fileExtension}`;
+        const storageRef = ref(storage, storagePath);
+
+        await uploadString(storageRef, music.dataUrl, 'data_url');
+        const downloadUrl = await getDownloadURL(storageRef);
+        
+        const newMusicFile: MusicFile = {
+            id,
+            title: music.title,
+            url: downloadUrl,
+            path: storagePath,
+        };
+
+        updateLibrary([...musicLibrary, newMusicFile]);
+        toast({ title: 'Success', description: 'Music uploaded to your library.' });
+    } catch (error) {
+        console.error("Error uploading music:", error);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload music. Please try again.' });
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const removeMusic = async (musicFile: MusicFile) => {
+    try {
+        const storageRef = ref(storage, musicFile.path);
+        await deleteObject(storageRef);
+
+        const newLibrary = musicLibrary.filter(m => m.id !== musicFile.id);
+        updateLibrary(newLibrary);
+        toast({ title: 'Success', description: 'Music removed from your library.' });
+    } catch (error) {
+        console.error("Error deleting music:", error);
+        toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not remove music. Please try again.' });
+    }
   }
   
   if (!isLoaded) {
@@ -54,7 +92,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <MusicContext.Provider value={{ musicLibrary, addMusicToLibrary, removeMusic }}>
+    <MusicContext.Provider value={{ musicLibrary, addMusicToLibrary, removeMusic, isUploading }}>
       {children}
     </MusicContext.Provider>
   );

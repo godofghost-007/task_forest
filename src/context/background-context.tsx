@@ -2,12 +2,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { useToast } from '@/hooks/use-toast';
 
 type Background = {
     id: string;
     type: 'image' | 'video';
     url: string;
     title: string;
+    path: string; // Firebase storage path
 };
 
 interface BackgroundContextType {
@@ -16,8 +20,9 @@ interface BackgroundContextType {
   backgroundLibrary: Background[];
   setPomodoroBackground: (background: Background | null) => void;
   setTaskSessionBackground: (background: Background | null) => void;
-  addBackgroundToLibrary: (background: Background) => void;
-  removeBackground: (id: string) => void;
+  addBackgroundToLibrary: (background: Pick<Background, 'type' | 'title'> & { dataUrl: string }) => Promise<void>;
+  removeBackground: (background: Background) => Promise<void>;
+  isUploading: boolean;
 }
 
 const BackgroundContext = createContext<BackgroundContextType | undefined>(undefined);
@@ -27,6 +32,8 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
   const [taskSessionBackground, setTaskSessionBackgroundState] = useState<Background | null>(null);
   const [backgroundLibrary, setBackgroundLibrary] = useState<Background[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -44,6 +51,11 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
     }
     setIsLoaded(true);
   }, []);
+  
+  const updateLibrary = (newLibrary: Background[]) => {
+    setBackgroundLibrary(newLibrary);
+    localStorage.setItem('backgroundLibrary', JSON.stringify(newLibrary));
+  }
 
   const setPomodoroBackground = (background: Background | null) => {
     setPomodoroBackgroundState(background);
@@ -63,20 +75,56 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addBackgroundToLibrary = (background: Background) => {
-    setBackgroundLibrary(prev => {
-        const newLibrary = [...prev, background];
-        localStorage.setItem('backgroundLibrary', JSON.stringify(newLibrary));
-        return newLibrary;
-    });
+  const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { dataUrl: string }) => {
+    setIsUploading(true);
+    try {
+        const id = `bg-${Date.now()}`;
+        const fileExtension = background.title.split('.').pop() || 'file';
+        const storagePath = `backgrounds/${id}.${fileExtension}`;
+        const storageRef = ref(storage, storagePath);
+
+        await uploadString(storageRef, background.dataUrl, 'data_url');
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        const newBackground: Background = {
+            id,
+            type: background.type,
+            title: background.title,
+            url: downloadUrl,
+            path: storagePath,
+        };
+        
+        updateLibrary([...backgroundLibrary, newBackground]);
+        toast({ title: 'Success', description: 'Background uploaded to your library.' });
+    } catch (error) {
+        console.error("Error uploading background:", error);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the background. Please try again.' });
+    } finally {
+        setIsUploading(false);
+    }
   };
 
-  const removeBackground = (id: string) => {
-    setBackgroundLibrary(prev => {
-        const newLibrary = prev.filter(bg => bg.id !== id);
-        localStorage.setItem('backgroundLibrary', JSON.stringify(newLibrary));
-        return newLibrary;
-    });
+  const removeBackground = async (background: Background) => {
+    try {
+        const storageRef = ref(storage, background.path);
+        await deleteObject(storageRef);
+
+        const newLibrary = backgroundLibrary.filter(bg => bg.id !== background.id);
+        updateLibrary(newLibrary);
+
+        // If the deleted background was set for pomodoro or task session, clear it.
+        if (pomodoroBackground?.id === background.id) {
+            setPomodoroBackground(null);
+        }
+        if (taskSessionBackground?.id === background.id) {
+            setTaskSessionBackground(null);
+        }
+
+        toast({ title: 'Success', description: 'Background removed from your library.' });
+    } catch(error) {
+        console.error("Error deleting background:", error);
+        toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not remove the background. Please try again.' });
+    }
   }
   
   if (!isLoaded) {
@@ -84,7 +132,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <BackgroundContext.Provider value={{ pomodoroBackground, taskSessionBackground, backgroundLibrary, setPomodoroBackground, setTaskSessionBackground, addBackgroundToLibrary, removeBackground }}>
+    <BackgroundContext.Provider value={{ pomodoroBackground, taskSessionBackground, backgroundLibrary, setPomodoroBackground, setTaskSessionBackground, addBackgroundToLibrary, removeBackground, isUploading }}>
       {children}
     </BackgroundContext.Provider>
   );

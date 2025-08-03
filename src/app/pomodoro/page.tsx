@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check, Image as ImageIcon } from 'lucide-react';
+import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,7 @@ export default function PomodoroPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addTask } = useTasks();
   const { pomodoroBackground, setPomodoroBackground, backgroundLibrary } = useBackgrounds();
-  const { musicLibrary, addMusicToLibrary } = useMusic();
+  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -186,13 +186,10 @@ export default function PomodoroPage() {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newMusic = {
-            id: `custom-${Date.now()}`,
+        addMusicToLibrary({
             title: file.name,
-            url: e.target?.result as string,
-        };
-        addMusicToLibrary(newMusic);
-        setSelectedMusicId(newMusic.id);
+            dataUrl: e.target?.result as string,
+        });
       }
       reader.readAsDataURL(file);
     }
@@ -391,12 +388,17 @@ export default function PomodoroPage() {
                                     onChange={handleFileChange}
                                     className="hidden"
                                     accept="audio/mp3,audio/*"
+                                    disabled={isUploading}
                                 />
                                 <button
                                     onClick={handleUploadClick}
-                                    className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm hover:bg-accent/50"
+                                    disabled={isUploading}
+                                    className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm hover:bg-accent/50 disabled:opacity-50"
                                 >
-                                    <p>From your device...</p>
+                                    <p className="flex items-center gap-2">
+                                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Music className="h-4 w-4"/>}
+                                        {isUploading ? 'Uploading...' : 'From your device...'}
+                                    </p>
                                 </button>
                             </div>
                         </ScrollArea>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake, Image as ImageIcon, Video, X, Music, Trash2, Check } from 'lucide-react';
+import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake, Image as ImageIcon, Video, X, Music, Trash2, Check, Loader2 } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 import { ThemeDialog } from '@/components/profile/theme-dialog';
 import { EditProfileDialog } from '@/components/profile/edit-profile-dialog';
@@ -31,8 +31,8 @@ export interface UserProfile {
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
-  const { backgroundLibrary, addBackgroundToLibrary, removeBackground, setPomodoroBackground, setTaskSessionBackground } = useBackgrounds();
-  const { musicLibrary, addMusicToLibrary, removeMusic } = useMusic();
+  const { backgroundLibrary, addBackgroundToLibrary, removeBackground, setPomodoroBackground, setTaskSessionBackground, isUploading: isBgUploading } = useBackgrounds();
+  const { musicLibrary, addMusicToLibrary, removeMusic, isUploading: isMusicUploading } = useMusic();
   
   const [notificationSettings, setNotificationSettings] = useState({
     reminders: true,
@@ -66,10 +66,9 @@ export default function ProfilePage() {
         const reader = new FileReader();
         reader.onload = (e) => {
             addBackgroundToLibrary({
-                id: `bg-${Date.now()}`,
                 type: file.type.startsWith('video') ? 'video' : 'image',
-                url: e.target?.result as string,
                 title: file.name,
+                dataUrl: e.target?.result as string,
             });
         };
         reader.readAsDataURL(file);
@@ -82,9 +81,8 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         addMusicToLibrary({
-          id: `music-${Date.now()}`,
-          url: e.target?.result as string,
           title: file.name,
+          dataUrl: e.target?.result as string,
         });
       };
       reader.readAsDataURL(file);
@@ -199,14 +197,20 @@ export default function ProfilePage() {
                             className="hidden"
                             accept="image/png,image/jpeg,video/mp4,video/webm"
                             onChange={handleBgFileChange}
+                            disabled={isBgUploading}
                         />
                         <button
                             onClick={() => bgFileInputRef.current?.click()}
-                            className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                            disabled={isBgUploading}
+                            className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <div className="text-center">
-                                <ImageIcon className="h-8 w-8 mx-auto" />
-                                <span className="text-xs">Upload New</span>
+                                {isBgUploading ? (
+                                    <Loader2 className="h-8 w-8 mx-auto animate-spin" />
+                                ) : (
+                                    <ImageIcon className="h-8 w-8 mx-auto" />
+                                )}
+                                <span className="text-xs">{isBgUploading ? 'Uploading...' : 'Upload New'}</span>
                             </div>
                         </button>
                         {backgroundLibrary.map((bg) => (
@@ -235,12 +239,12 @@ export default function ProfilePage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        This will permanently delete the background from your library.
+                                                        This will permanently delete the background from your library. This action cannot be undone.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => removeBackground(bg.id)}>Continue</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => removeBackground(bg)}>Continue</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -267,10 +271,11 @@ export default function ProfilePage() {
                     className="hidden"
                     accept="audio/*"
                     onChange={handleMusicFileChange}
+                    disabled={isMusicUploading}
                 />
-                <Button onClick={() => musicFileInputRef.current?.click()} className="mb-4">
-                    <Music className="mr-2 h-4 w-4" />
-                    Upload New Music
+                <Button onClick={() => musicFileInputRef.current?.click()} className="mb-4" disabled={isMusicUploading}>
+                    {isMusicUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Music className="mr-2 h-4 w-4" />}
+                    {isMusicUploading ? 'Uploading...' : 'Upload New Music'}
                 </Button>
                 <ScrollArea className="w-full h-48">
                     <div className="space-y-2 pr-4">
@@ -290,12 +295,12 @@ export default function ProfilePage() {
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This will permanently delete the audio track from your library.
+                                                This will permanently delete the audio track from your library. This action cannot be undone.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => removeMusic(track.id)}>Continue</AlertDialogAction>
+                                            <AlertDialogAction onClick={() => removeMusic(track)}>Continue</AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>

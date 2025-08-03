@@ -31,6 +31,7 @@ import {
   Star,
   Timer,
   Play,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
@@ -95,7 +96,7 @@ import { ScrollArea } from '../ui/scroll-area';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const router = useRouter();
-  const { musicLibrary, addMusicToLibrary } = useMusic();
+  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(meditationMusic[0].id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,13 +111,13 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newMusic = {
-            id: `custom-${Date.now()}`,
+        addMusicToLibrary({
             title: file.name,
-            url: e.target?.result as string
-        };
-        addMusicToLibrary(newMusic);
-        setSelectedMusicId(newMusic.id);
+            dataUrl: e.target?.result as string
+        }).then(() => {
+            // This is tricky because we don't get the new ID back directly.
+            // For now, we won't auto-select it, user can select from library.
+        });
       }
       reader.readAsDataURL(file);
     }
@@ -175,12 +176,17 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
                 onChange={handleFileChange}
                 className="hidden"
                 accept="audio/mp3,audio/*"
+                disabled={isUploading}
             />
             <button
                 onClick={handleUploadClick}
-                className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10"
+                disabled={isUploading}
+                className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <p className="font-medium">From your device...</p>
+                <p className="font-medium flex items-center gap-2">
+                   {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Music className="h-4 w-4" />}
+                   {isUploading ? 'Uploading...' : 'From your device...'}
+                </p>
             </button>
         </div>
         </ScrollArea>
@@ -196,7 +202,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask, selectedDate } = useTasks();
-  const { musicLibrary, addMusicToLibrary } = useMusic();
+  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
@@ -240,13 +246,10 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newMusic = {
-            id: `custom-${Date.now()}`,
+        addMusicToLibrary({
             title: file.name,
-            url: e.target?.result as string,
-        };
-        addMusicToLibrary(newMusic);
-        setSelectedMusicId(newMusic.id);
+            dataUrl: e.target?.result as string,
+        });
       }
       reader.readAsDataURL(file);
     }
@@ -354,12 +357,17 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                   onChange={handleFileChange}
                   className="hidden"
                   accept="audio/mp3,audio/*"
+                  disabled={isUploading}
               />
               <button
                   onClick={handleUploadClick}
-                  className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10"
+                  disabled={isUploading}
+                  className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50"
               >
-                <p className="font-medium">From your device...</p>
+                  <p className="font-medium flex items-center gap-2">
+                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Music className="h-4 w-4" />}
+                      {isUploading ? 'Uploading...' : 'From your device...'}
+                  </p>
               </button>
           </div>
           </ScrollArea>
@@ -376,7 +384,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
   const { addTask, addDefaultTask, selectedDate } = useTasks();
-  const { musicLibrary, addMusicToLibrary } = useMusic();
+  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(undefined);
@@ -427,13 +435,10 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newMusic = {
-            id: `custom-${Date.now()}`,
+        addMusicToLibrary({
             title: file.name,
-            url: e.target?.result as string,
-        };
-        addMusicToLibrary(newMusic);
-        setSelectedMusicId(newMusic.id);
+            dataUrl: e.target?.result as string,
+        });
       }
       reader.readAsDataURL(file);
     }
@@ -537,12 +542,17 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
                   onChange={handleFileChange}
                   className="hidden"
                   accept="audio/mp3,audio/*"
+                  disabled={isUploading}
               />
               <button
                   onClick={handleUploadClick}
-                  className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10"
+                  disabled={isUploading}
+                  className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50"
               >
-                  <p className="font-medium">From your device...</p>
+                  <p className="font-medium flex items-center gap-2">
+                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Music className="h-4 w-4" />}
+                      {isUploading ? 'Uploading...' : 'From your device...'}
+                  </p>
               </button>
           </div>
           </ScrollArea>
