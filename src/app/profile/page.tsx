@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
+import { ThemeDialog } from '@/components/profile/theme-dialog';
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
@@ -151,7 +152,9 @@ export default function ProfilePage() {
                         <Palette className="h-5 w-5 text-muted-foreground" />
                         <span className="font-medium">Theme</span>
                     </div>
-                    <Button variant="outline" size="sm">Change</Button>
+                    <ThemeDialog>
+                      <Button variant="outline" size="sm">Change</Button>
+                    </ThemeDialog>
                  </div>
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

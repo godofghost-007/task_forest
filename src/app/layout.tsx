@@ -5,6 +5,7 @@ import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { TaskProvider } from '@/context/task-context';
+import { ThemeProvider } from '@/context/theme-context';
 
 export const metadata: Metadata = {
   title: 'Task Forest',
@@ -31,14 +32,16 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased')}>
-        <TaskProvider>
-          <SidebarProvider>
-            <div className="relative flex min-h-dvh">
-              <AppSidebar />
-              <SidebarInset className="flex-1 bg-background">{children}</SidebarInset>
-            </div>
-          </SidebarProvider>
-        </TaskProvider>
+        <ThemeProvider>
+          <TaskProvider>
+            <SidebarProvider>
+              <div className="relative flex min-h-dvh">
+                <AppSidebar />
+                <SidebarInset className="flex-1 bg-background">{children}</SidebarInset>
+              </div>
+            </SidebarProvider>
+          </TaskProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>
