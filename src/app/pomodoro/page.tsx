@@ -137,7 +137,7 @@ export default function PomodoroPage() {
       }
     }
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft, sessionType, pomodoroCount, durations, addTask, longBreakInterval, router]);
+  }, [isActive, timeLeft, sessionType, pomodoroCount, durations, addTask, longBreakInterval]);
 
   React.useEffect(() => {
     if (audioRef.current) {
