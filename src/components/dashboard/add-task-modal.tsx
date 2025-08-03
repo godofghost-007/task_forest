@@ -16,7 +16,6 @@ import {
   Dumbbell,
   Footprints,
   Heart,
-  LayoutGrid,
   Pencil,
   Search,
   Bike,
@@ -32,14 +31,6 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { cn } from '@/lib/utils';
 
-
-const actionIcons = [
-  { icon: Check, label: 'Completion' },
-  { icon: Heart, label: 'Health' },
-  { icon: LayoutGrid, label: 'Categories' },
-  { icon: Clock, label: 'Schedule' },
-  { icon: Pencil, label: 'Custom' },
-];
 
 const healthTasks = [
   { icon: Footprints, name: 'Walk or Run' },
@@ -275,30 +266,24 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-around">
-        {actionIcons.map(({ icon: Icon, label }) => (
-          <div key={label} className="flex flex-col items-center gap-2">
-            <Button
-              size="icon"
-              className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30"
-              onClick={() => label === 'Custom' && onCustomClick()}
-            >
-              <Icon className="h-7 w-7 text-white" />
-            </Button>
-            <span className="text-xs text-white/80">{label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-4">
+       <div className="space-y-4">
         <p className="text-center text-xs text-white/70">
+          Add a new health task or create a custom one.
+        </p>
+
+        <Button onClick={onCustomClick} variant="outline" className="w-full bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-white">
+          <Pencil className="mr-2 h-4 w-4" />
+          Create a Custom Task
+        </Button>
+
+
+        <h3 className="font-headline font-semibold text-white pt-4">
+          CREATE A HEALTH TASK:
+        </h3>
+        <p className="text-xs text-white/70 -mt-3">
           Health tasks are linked to the Health app and are automatically
           marked as complete when new data is recorded.
         </p>
-
-        <h3 className="font-headline font-semibold text-white">
-          CREATE A HEALTH TASK:
-        </h3>
 
         <div className="space-y-2">
           {healthTasks.map((task) => {
