@@ -73,16 +73,9 @@ const iconMap: { [key: string]: React.ElementType } = {
   Dumbbell,
   Pencil,
   Check,
-  Scissors: Icons.Scissors,
-  PenTool: Icons.PenTool,
-  Leaf: Icons.Leaf,
-  BookOpen: Icons.BookOpen,
-  RunIcon: RunIcon,
-  Pill: Icons.Pill,
+  BookOpen,
 };
 
-import * as Icons from 'lucide-react';
-import { RunIcon } from '@/components/icons/run-icon';
 import { Label } from '../ui/label';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
@@ -95,7 +88,9 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
   const handleAddTask = () => {
     let musicData = selectedMusic;
     if (localFileName) {
-      musicData = { title: localFileName, duration: 'Custom' };
+      // In a real app, you would handle the file upload here.
+      // For now, we'll just use the file name.
+      musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
     }
     
     addTask({
@@ -107,6 +102,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       completed: false,
       showPlay: true,
       music: musicData,
+      duration: parseInt(musicData?.duration || '10', 10), // Default duration
     });
     onClose();
   };
@@ -194,7 +190,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   const handleAddTask = () => {
     let musicData = selectedMusic;
     if (localFileName) {
-      musicData = { title: localFileName, duration: 'Custom' };
+      musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
     }
     addTask({
       id: Date.now().toString(),
@@ -322,7 +318,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
     if (title.trim()) {
       let musicData = selectedMusic;
       if (localFileName) {
-        musicData = { title: localFileName, duration: 'Custom' };
+        musicData = { id: Date.now().toString(), title: localFileName, duration: 'Custom' };
       }
       addTask({
         id: Date.now().toString(),
@@ -433,10 +429,13 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
 }
 
 function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void, onMusicClick: (task: Partial<Task>) => void }) {
-  const { addTask, closeTaskModal } = useTasks();
+  const getIconName = (IconComponent: React.ElementType) => {
+    const iconName = Object.keys(iconMap).find(key => iconMap[key] === IconComponent);
+    return iconName || 'Pencil'; // Fallback icon
+  };
   
   const handleHealthTaskClick = (task: {name: string, icon: React.ElementType, indicator?: string}) => {
-    const iconName = (task.icon as any).displayName || Object.keys(iconMap).find(key => iconMap[key] === task.icon) || 'Heart';
+    const iconName = getIconName(task.icon);
 
     if (task.name === 'Mindful Minutes') {
       onMusicClick({ title: task.name, icon: iconName });
@@ -475,7 +474,7 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
         <div className="space-y-2">
           {healthTasks.map((task, index) => {
             const { icon: Icon, name } = task;
-            const iconName = (Icon as any).displayName || Object.keys(iconMap).find(key => iconMap[key] === Icon) || 'Heart';
+            const iconName = getIconName(Icon);
             return (
                 <div key={`${name}-${index}`} className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10">
                     <button
@@ -536,7 +535,7 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
         setSelectedTask(null);
       }
     }}>
-      <DialogTrigger asChild onClick={() => setTaskModalOpen(true)}>{children}</DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-md w-full p-0 border-0 bg-gradient-to-br from-gradient-gold-start to-gradient-gold-end text-white">
         <DialogHeader className="flex flex-row items-center justify-between p-4 border-b border-white/20">
           <DialogTitle className="font-headline text-lg text-white">Add Task</DialogTitle>

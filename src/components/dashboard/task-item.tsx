@@ -38,11 +38,7 @@ export function TaskItem({
   
   const displaySubtitle = () => {
     if (music) {
-      let musicInfo = music.title;
-      if (music.duration !== 'Custom') {
-        musicInfo += ` - ${music.duration}`;
-      }
-      return musicInfo;
+      return music.title;
     }
     if (time) {
       return `${time} - ${subtitle}`;
