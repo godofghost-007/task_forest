@@ -40,8 +40,9 @@ const defaultBackgrounds = [
 export default function PomodoroPage() {
   const router = useRouter();
   const { addTask } = useTasks();
-  const { pomodoroBackground, setPomodoroBackground, backgroundLibrary } = useBackgrounds();
+  const { pomodoroBackground, setPomodoroBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
   const { musicLibrary } = useMusic();
+  const bgFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -179,6 +180,17 @@ export default function PomodoroPage() {
       audioRef.current.currentTime += amount;
     }
   };
+
+  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        addBackgroundToLibrary({
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            title: file.name,
+            file: file,
+        });
+    }
+  };
   
   const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
 
@@ -239,6 +251,18 @@ export default function PomodoroPage() {
                         <h4 className="font-medium leading-none">Change Background</h4>
                         <p className="text-sm text-muted-foreground">Select a background from your library.</p>
                     </div>
+                     <input
+                        type="file"
+                        ref={bgFileInputRef}
+                        className="hidden"
+                        accept="image/png,image/jpeg,video/mp4,video/webm"
+                        onChange={handleBgFileChange}
+                        disabled={isBgUploading}
+                    />
+                    <Button size="sm" onClick={() => bgFileInputRef.current?.click()} disabled={isBgUploading} className="w-full mt-4">
+                        {isBgUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                        <span className="ml-2">Upload from Device</span>
+                    </Button>
                     <ScrollArea className="h-60 mt-4">
                         <div className="grid grid-cols-2 gap-2 pr-2">
                             <button onClick={() => setPomodoroBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
@@ -434,3 +458,5 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
+
+    
