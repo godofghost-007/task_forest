@@ -11,6 +11,7 @@ import { MusicProvider } from '@/context/music-context';
 export const metadata: Metadata = {
   title: 'Task Forest',
   description: 'Gamify your tasks and build your own forest.',
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
