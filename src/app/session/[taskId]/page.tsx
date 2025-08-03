@@ -7,12 +7,14 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward, Coffee } from 'lucide-react';
+import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward, Coffee, ImageIcon, Loader2, Upload } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useBackgrounds } from '@/context/background-context';
 import { cn } from '@/lib/utils';
 import { useMusic } from '@/context/music-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 function formatTime(seconds: number) {
@@ -36,7 +38,7 @@ export default function TaskSessionPage() {
   const router = useRouter();
   const params = useParams();
   const { tasks, completeTask } = useTasks();
-  const { taskSessionBackground } = useBackgrounds();
+  const { taskSessionBackground, setTaskSessionBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
   const { musicLibrary } = useMusic();
   const [task, setTask] = React.useState<Task | null>(null);
 
@@ -51,6 +53,7 @@ export default function TaskSessionPage() {
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
+  const bgFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const taskId = params.taskId as string;
   
@@ -125,7 +128,7 @@ export default function TaskSessionPage() {
         setIsSessionCompleted(true);
         setPomodoroCount(prev => prev + 1);
         // Logic for next session
-        const nextSession: SessionType = pomodoroCount > 0 && pomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
+        const nextSession: SessionType = pomodoroCount > 0 && pomodoroCount % 4 === 0 ? 'longBreak' : 'longBreak';
         setSessionType(nextSession);
         setTimeLeft(durations[nextSession]);
 
@@ -186,6 +189,19 @@ export default function TaskSessionPage() {
     }
   };
 
+  const handleBgFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        await addBackgroundToLibrary({
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            title: file.name,
+            file: file,
+        }, true);
+    }
+  };
+  
+  const recentBackgrounds = [...backgroundLibrary].reverse().slice(0, 3);
+
   if (!task) {
     return <AppLayout><div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div></AppLayout>;
   }
@@ -223,6 +239,53 @@ export default function TaskSessionPage() {
         <div className="absolute inset-0 bg-black/50" />
         
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
+                        <ImageIcon className="h-6 w-6"/>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-background/80 backdrop-blur-md border-white/20 text-foreground">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Change Background</h4>
+                        <p className="text-sm text-muted-foreground">Select a background from your library.</p>
+                    </div>
+                     <input
+                        type="file"
+                        ref={bgFileInputRef}
+                        className="hidden"
+                        accept="image/png,image/jpeg,video/mp4,video/webm"
+                        onChange={handleBgFileChange}
+                        disabled={isBgUploading}
+                    />
+                    <Button size="sm" onClick={() => bgFileInputRef.current?.click()} disabled={isBgUploading} className="w-full mt-4">
+                        {isBgUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                        <span className="ml-2">Upload from Device</span>
+                    </Button>
+                    <ScrollArea className="h-60 mt-4">
+                        <div className="grid grid-cols-2 gap-2 pr-2">
+                            <button onClick={() => setTaskSessionBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
+                                Use Default
+                            </button>
+                            {recentBackgrounds.map(bg => (
+                                <button key={bg.id} onClick={() => setTaskSessionBackground(bg)} className="relative aspect-video w-full rounded-md overflow-hidden group">
+                                    {bg.type === 'image' ? (
+                                        <img src={bg.url} alt="background" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <video src={bg.url} muted loop className="w-full h-full object-cover" />
+                                    )}
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                                        <Check className="h-8 w-8 text-white"/>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </PopoverContent>
+            </Popover>
+        </div>
           
           <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none -z-10">
              {!taskSessionBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
@@ -307,3 +370,5 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
+
+    
