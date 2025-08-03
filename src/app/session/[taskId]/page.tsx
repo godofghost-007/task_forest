@@ -8,8 +8,8 @@ import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward } from 'lucide-react';
-import Image from 'next/image';
 import { PlantGrowth } from '@/components/session/plant-growth';
+import { LottieBackground } from '@/components/session/lottie-background';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -146,14 +146,7 @@ export default function TaskSessionPage() {
   
   return (
     <div className="relative h-dvh w-full">
-      <Image
-        src="https://placehold.co/1920x1080"
-        alt="Calm mountain scenery"
-        data-ai-hint="calm mountain scenery"
-        fill
-        className="object-cover"
-        priority
-      />
+      <LottieBackground />
       <div className="absolute inset-0 bg-black/50" />
       
       <div className="relative z-10 flex h-full flex-col items-center justify-between p-4 text-white">
