@@ -63,9 +63,7 @@ export function TaskItem({
     return subtitle;
   }
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDelete = () => {
     deleteTask(id);
   }
 
@@ -79,12 +77,12 @@ export function TaskItem({
                     variant="destructive"
                     size="icon"
                     className="absolute top-0 right-0 z-10 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            <AlertDialogContent onClick={(e) => { e.stopPropagation(); }}>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
