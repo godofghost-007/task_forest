@@ -4,7 +4,6 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
   projectId: "task-forest-bnkxy",
@@ -15,8 +14,9 @@ const firebaseConfig = {
   messagingSenderId: "298212702743"
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// Initialize Firebase for client-side
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
