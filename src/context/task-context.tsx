@@ -26,6 +26,7 @@ export interface Task {
 interface TaskContextType {
   tasks: Task[];
   addTask: (task: Task) => void;
+  deleteTask: (taskId: string) => void;
   completeTask: (taskId: string) => void;
   isTaskModalOpen: boolean;
   setTaskModalOpen: (isOpen: boolean) => void;
@@ -118,6 +119,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasks((prevTasks) => [...prevTasks, task]);
   };
 
+  const deleteTask = (taskId: string) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  };
+
   const closeTaskModal = () => {
     setTaskModalOpen(false);
   }
@@ -131,7 +136,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
+    <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
       {children}
     </TaskContext.Provider>
   );

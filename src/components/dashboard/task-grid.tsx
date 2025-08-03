@@ -2,7 +2,6 @@
 'use client';
 import { useTasks } from '@/context/task-context';
 import { TaskItem } from './task-item';
-import Link from 'next/link';
 
 export function TaskGrid() {
   const { tasks, selectedDate } = useTasks();
@@ -23,11 +22,10 @@ export function TaskGrid() {
   return (
     <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
       {filteredTasks.map((task) => (
-        <Link key={task.id} href={`/session/${task.id}`} className="no-underline">
           <TaskItem
+            key={task.id}
             {...task}
           />
-        </Link>
       ))}
     </div>
   );
