@@ -6,7 +6,7 @@ import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
-type Background = {
+export type Background = {
     id: string;
     type: 'image' | 'video';
     url: string;
@@ -20,7 +20,7 @@ interface BackgroundContextType {
   backgroundLibrary: Background[];
   setPomodoroBackground: (background: Background | null) => void;
   setTaskSessionBackground: (background: Background | null) => void;
-  addBackgroundToLibrary: (background: Pick<Background, 'type' | 'title'> & { file: File }) => Promise<void>;
+  addBackgroundToLibrary: (background: Pick<Background, 'type' | 'title'> & { file: File }, andApply?: boolean) => Promise<void>;
   removeBackground: (background: Background) => Promise<void>;
   isUploading: boolean;
 }
@@ -75,7 +75,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { file: File }) => {
+  const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { file: File }, andApply = false) => {
     setIsUploading(true);
     try {
         const id = `bg-${Date.now()}`;
@@ -95,6 +95,11 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
         };
         
         updateLibrary([...backgroundLibrary, newBackground]);
+
+        if (andApply) {
+            setPomodoroBackground(newBackground);
+        }
+
         toast({ title: 'Success', description: 'Background uploaded to your library.' });
     } catch (error) {
         console.error("Error uploading background:", error);

@@ -181,18 +181,20 @@ export default function PomodoroPage() {
     }
   };
 
-  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBgFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
         const file = event.target.files[0];
-        addBackgroundToLibrary({
+        await addBackgroundToLibrary({
             type: file.type.startsWith('video') ? 'video' : 'image',
             title: file.name,
             file: file,
-        });
+        }, true);
     }
   };
   
   const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
+  
+  const recentBackgrounds = [...backgroundLibrary].reverse().slice(0, 3);
 
   const getSessionTitle = () => {
     switch(sessionType) {
@@ -268,7 +270,7 @@ export default function PomodoroPage() {
                             <button onClick={() => setPomodoroBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
                                 Use Default
                             </button>
-                            {backgroundLibrary.map(bg => (
+                            {recentBackgrounds.map(bg => (
                                 <button key={bg.id} onClick={() => setPomodoroBackground(bg)} className="relative aspect-video w-full rounded-md overflow-hidden group">
                                     {bg.type === 'image' ? (
                                         <img src={bg.url} alt="background" className="w-full h-full object-cover" />
@@ -458,5 +460,3 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
-
-    
