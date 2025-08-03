@@ -16,21 +16,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('task-forest-theme') || 'Default';
-    setThemeState(savedTheme);
+    setTheme(savedTheme);
   }, []);
 
   const setTheme = (themeName: string) => {
     const root = window.document.documentElement;
     const selectedTheme = themes.find(t => t.name === themeName);
+    
     if (!selectedTheme) return;
 
-    // Remove old theme class if it exists
-    const oldTheme = themes.find(t => t.name === theme);
-    if (oldTheme && oldTheme.className) {
-        root.classList.remove(oldTheme.className);
-    }
+    // Clean up all possible theme classes
+    themes.forEach(t => {
+      if (t.className) {
+        root.classList.remove(t.className);
+      }
+    });
     
-    // Add new theme class
+    // Add the new theme class
     if (selectedTheme.className) {
         root.classList.add(selectedTheme.className);
     }
@@ -41,15 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   
   // On initial load, apply the theme from state
   useEffect(() => {
-      const selectedTheme = themes.find(t => t.name === theme);
-      if (selectedTheme && selectedTheme.className) {
-          const root = window.document.documentElement;
-          // Clean up other theme classes
-          themes.forEach(t => {
-              if (t.className) root.classList.remove(t.className);
-          });
-          root.classList.add(selectedTheme.className);
-      }
+    setTheme(theme);
   }, [theme]);
 
   return (
