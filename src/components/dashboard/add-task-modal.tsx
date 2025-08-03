@@ -33,6 +33,8 @@ import {
   Play,
   Loader2,
   Upload,
+  ImageIcon,
+  Video
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
@@ -44,6 +46,7 @@ import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useMusic } from '@/context/music-context';
+import { useBackgrounds } from '@/context/background-context';
 
 
 const healthTasks = [
@@ -161,11 +164,17 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask, selectedDate } = useTasks();
-  const { musicLibrary } = useMusic();
+  const { musicLibrary, addMusicToLibrary, isUploading: isMusicUploading } = useMusic();
+  const { backgroundLibrary, addBackgroundToLibrary, setTaskSessionBackground, isUploading: isBgUploading } = useBackgrounds();
+
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const musicFileInputRef = useRef<HTMLInputElement>(null);
+
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(undefined);
+  const [selectedBg, setSelectedBg] = useState<any | null>(null);
 
   const handleAddTask = () => {
     let musicData: Task['music'] | undefined;
@@ -179,6 +188,9 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 musicData = { id: custom.id, title: custom.title, duration: 'Custom' };
             }
         }
+    }
+    if (selectedBg) {
+        setTaskSessionBackground(selectedBg);
     }
 
     addTask({
@@ -197,6 +209,27 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
     onClose();
   };
   
+  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      addBackgroundToLibrary({
+          type: file.type.startsWith('video') ? 'video' : 'image',
+          title: file.name,
+          file: file,
+      }, true);
+    }
+  };
+
+  const handleMusicFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      addMusicToLibrary({
+          title: file.name,
+          file: file,
+      });
+    }
+  };
+
   const Icon = task.icon && iconMap[task.icon as string] ? iconMap[task.icon as string] : Pencil;
 
   return (
@@ -257,8 +290,55 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
             />
         </div>
+         <div className="space-y-2">
+            <h4 className="font-semibold text-white/90">Select Background</h4>
+            <div className="grid grid-cols-4 gap-2">
+                <button 
+                  onClick={() => bgFileInputRef.current?.click()}
+                  disabled={isBgUploading}
+                  className="aspect-square flex flex-col items-center justify-center gap-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">
+                   {isBgUploading ? <Loader2 className="h-6 w-6 animate-spin"/> : <Upload className="h-6 w-6" />}
+                   Upload
+                </button>
+                 <input
+                    type="file"
+                    ref={bgFileInputRef}
+                    className="hidden"
+                    accept="image/png,image/jpeg,video/mp4,video/webm"
+                    onChange={handleBgFileChange}
+                />
+                {backgroundLibrary.slice(0, 3).map(bg => (
+                    <button key={bg.id} onClick={() => setSelectedBg(bg)} className={cn("relative aspect-square rounded-lg overflow-hidden border-2", selectedBg?.id === bg.id ? "border-white" : "border-transparent")}>
+                        {bg.type === 'image' ? (
+                            <img src={bg.url} alt="background" className="w-full h-full object-cover" />
+                        ) : (
+                            <video src={bg.url} muted loop className="w-full h-full object-cover" />
+                        )}
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            {bg.type === 'image' ? <ImageIcon className="h-6 w-6 text-white/80"/> : <Video className="h-6 w-6 text-white/80"/>}
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
         <div className="space-y-2">
-          <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+          <div className="flex justify-between items-center">
+            <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+            <button 
+              onClick={() => musicFileInputRef.current?.click()} 
+              disabled={isMusicUploading}
+              className="text-xs flex items-center gap-1 hover:text-white/80">
+              {isMusicUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : <Upload className="h-3 w-3" />}
+              Upload
+            </button>
+            <input
+                type="file"
+                ref={musicFileInputRef}
+                className="hidden"
+                accept="audio/*"
+                onChange={handleMusicFileChange}
+            />
+          </div>
           <ScrollArea className="h-40">
           {meditationMusic.map((music) => (
             <button
