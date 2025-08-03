@@ -16,6 +16,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 
 export interface UserProfile {
   name: string;
+  username: string;
   email: string;
   mobile: string;
   hobbies: string;
@@ -32,6 +33,7 @@ export default function ProfilePage() {
 
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: 'Alex Doe',
+    username: 'alex_doe',
     email: 'alex.doe@example.com',
     mobile: '123-456-7890',
     hobbies: 'Reading, hiking, coding',
@@ -75,6 +77,7 @@ export default function ProfilePage() {
               </Avatar>
               <div className="text-center sm:text-left">
                 <h1 className="font-headline text-3xl font-bold">{userProfile.name}</h1>
+                <p className="text-muted-foreground">@{userProfile.username}</p>
                 <p className="text-muted-foreground">{userProfile.email}</p>
                  {userProfile.dob && <p className="text-sm text-muted-foreground">Birthday: {format(parseISO(userProfile.dob), 'MMMM d, yyyy')}</p>}
                 <EditProfileDialog userProfile={userProfile} onSave={setUserProfile}>

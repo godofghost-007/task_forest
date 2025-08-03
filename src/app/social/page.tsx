@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Paperclip, Send, Smile, Image as ImageIcon, FileText, Film, StickyNote, UserPlus } from 'lucide-react';
+import { Paperclip, Send, Smile, Image as ImageIcon, FileText, Film, StickyNote, UserPlus, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
@@ -17,6 +17,7 @@ import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 interface User {
   id: string;
   name: string;
+  username: string;
   avatarUrl: string;
   lastMessage?: string;
   lastMessageTime?: string;
@@ -37,12 +38,12 @@ interface Message {
 }
 
 const mockUsers: User[] = [
-  { id: 'user-1', name: 'Alice', avatarUrl: 'https://placehold.co/100x100/a2d2ff/333.png', lastMessage: 'See you tomorrow!', lastMessageTime: '10:42 AM', online: true },
-  { id: 'user-2', name: 'Bob', avatarUrl: 'https://placehold.co/100x100/ffb3ba/333.png', lastMessage: 'Sounds good!', lastMessageTime: '10:30 AM' },
-  { id: 'user-3', name: 'Charlie', avatarUrl: 'https://placehold.co/100x100/bae1ff/333.png', lastMessage: 'Can you send the file?', lastMessageTime: 'Yesterday' },
-  { id: 'user-4', name: 'Diana', avatarUrl: 'https://placehold.co/100x100/ffffba/333.png', lastMessage: 'Just checking in.', lastMessageTime: 'Yesterday', online: true },
-  { id: 'user-5', name: 'Eve', avatarUrl: 'https://placehold.co/100x100/baffc9/333.png' },
-  { id: 'user-6', name: 'Frank', avatarUrl: 'https://placehold.co/100x100/ffdfba/333.png' },
+  { id: 'user-1', name: 'Alice', username: 'alice_in_wonderland', avatarUrl: 'https://placehold.co/100x100/a2d2ff/333.png', lastMessage: 'See you tomorrow!', lastMessageTime: '10:42 AM', online: true },
+  { id: 'user-2', name: 'Bob', username: 'bob_the_builder', avatarUrl: 'https://placehold.co/100x100/ffb3ba/333.png', lastMessage: 'Sounds good!', lastMessageTime: '10:30 AM' },
+  { id: 'user-3', name: 'Charlie', username: 'charlie_brown', avatarUrl: 'https://placehold.co/100x100/bae1ff/333.png', lastMessage: 'Can you send the file?', lastMessageTime: 'Yesterday' },
+  { id: 'user-4', name: 'Diana', username: 'diana_prince', avatarUrl: 'https://placehold.co/100x100/ffffba/333.png', lastMessage: 'Just checking in.', lastMessageTime: 'Yesterday', online: true },
+  { id: 'user-5', name: 'Eve', username: 'eve_online', avatarUrl: 'https://placehold.co/100x100/baffc9/333.png' },
+  { id: 'user-6', name: 'Frank', username: 'frankenstein', avatarUrl: 'https://placehold.co/100x100/ffdfba/333.png' },
 ];
 
 const mockMessages: { [key: string]: Message[] } = {
@@ -72,6 +73,7 @@ const mockMessages: { [key: string]: Message[] } = {
 const currentUser = {
     id: 'me',
     name: 'You',
+    username: 'current_user',
     avatarUrl: 'https://placehold.co/100x100/e0e0e0/333.png'
 };
 
@@ -183,16 +185,24 @@ export default function SocialPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const conversationUsers = useMemo(() => {
-    return mockUsers.filter(u => u.lastMessage);
-  }, []);
+    if (!searchQuery) {
+        return mockUsers.filter(u => u.lastMessage);
+    }
+    const lowercasedQuery = searchQuery.toLowerCase();
+    return mockUsers.filter(u => 
+        u.lastMessage && 
+        (u.name.toLowerCase().includes(lowercasedQuery) || u.username.toLowerCase().includes(lowercasedQuery))
+    );
+  }, [searchQuery]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery) return [];
+    const lowercasedQuery = searchQuery.toLowerCase();
     return mockUsers.filter(u => 
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-      !conversationUsers.some(cu => cu.id === u.id)
+      !u.lastMessage && 
+      (u.name.toLowerCase().includes(lowercasedQuery) || u.username.toLowerCase().includes(lowercasedQuery))
     );
-  }, [searchQuery, conversationUsers]);
+  }, [searchQuery]);
 
   const handleUserSelect = (user: User) => {
     setSelectedUser(user);
@@ -252,18 +262,16 @@ export default function SocialPage() {
                 <header className="p-4 border-b">
                     <h2 className="text-xl font-bold font-headline">Chats</h2>
                     <Input 
-                      placeholder="Search users..." 
+                      placeholder="Search by name or @username..." 
                       className="mt-2"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </header>
                 <ScrollArea className="flex-1">
-                    {searchQuery ? (
+                    {searchQuery && searchResults.length > 0 && (
                       <div>
-                        {searchResults.length > 0 ? (
-                           <div className="p-2 text-sm font-semibold text-muted-foreground">New Chat</div>
-                        ) : null}
+                        <div className="p-2 text-sm font-semibold text-muted-foreground">New Chat</div>
                         {searchResults.map(user => (
                           <div 
                               key={user.id} 
@@ -276,18 +284,16 @@ export default function SocialPage() {
                               </Avatar>
                               <div className="flex-1 overflow-hidden">
                                   <h3 className="font-semibold truncate">{user.name}</h3>
+                                  <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                               </div>
                                <Button variant="ghost" size="icon">
                                  <UserPlus className="h-5 w-5 text-muted-foreground"/>
                                </Button>
                           </div>
                         ))}
-                        {searchResults.length === 0 && (
-                          <p className="p-4 text-center text-sm text-muted-foreground">No users found.</p>
-                        )}
                         <hr className="my-2"/>
                       </div>
-                    ) : null}
+                    )}
 
                     {conversationUsers.map(user => (
                         <div 
@@ -304,12 +310,18 @@ export default function SocialPage() {
                                 {user.online && <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />}
                             </Avatar>
                             <div className="flex-1 overflow-hidden">
-                                <h3 className="font-semibold truncate">{user.name}</h3>
+                                <div className="flex justify-between">
+                                    <h3 className="font-semibold truncate">{user.name}</h3>
+                                    <span className="text-xs text-muted-foreground">{user.lastMessageTime}</span>
+                                </div>
                                 <p className="text-sm text-muted-foreground truncate">{user.lastMessage}</p>
                             </div>
-                            <span className="text-xs text-muted-foreground">{user.lastMessageTime}</span>
                         </div>
                     ))}
+                    
+                    {searchQuery && searchResults.length === 0 && conversationUsers.length === 0 && (
+                        <p className="p-4 text-center text-sm text-muted-foreground">No users found for '{searchQuery}'.</p>
+                    )}
                 </ScrollArea>
            </Card>
            <div className="flex-1 flex flex-col h-full">

@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  username: z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores.'),
   email: z.string().email('Invalid email address'),
   mobile: z.string().optional(),
   hobbies: z.string().optional(),
@@ -65,6 +66,7 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
   React.useEffect(() => {
     if (open) {
       setValue('name', userProfile.name);
+      setValue('username', userProfile.username);
       setValue('email', userProfile.email);
       setValue('mobile', userProfile.mobile);
       setValue('hobbies', userProfile.hobbies);
@@ -127,10 +129,17 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex-1">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" {...register('name')} />
-              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
+            <div className="flex-1 space-y-2">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" {...register('name')} />
+                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
+              </div>
+               <div>
+                <Label htmlFor="username">Username</Label>
+                <Input id="username" {...register('username')} />
+                {errors.username && <p className="text-xs text-destructive mt-1">{errors.username.message}</p>}
+              </div>
             </div>
           </div>
           <div>
