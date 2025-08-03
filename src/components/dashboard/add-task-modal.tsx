@@ -97,32 +97,14 @@ import { ScrollArea } from '../ui/scroll-area';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const router = useRouter();
-  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
+  const { musicLibrary } = useMusic();
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(meditationMusic[0].id);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartSession = () => {
     // Simply go to the pomodoro page, which is now the main focus session page.
     router.push(`/pomodoro`);
     onClose();
   };
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      addMusicToLibrary({
-          title: file.name,
-          file: file
-      }).then(() => {
-          // This is tricky because we don't get the new ID back directly.
-          // For now, we won't auto-select it, user can select from library.
-      });
-    }
-  };
-  
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -166,26 +148,6 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
                 {selectedMusicId === music.id && <Check className="h-5 w-5 text-white" />}
             </button>
         ))}
-         <div>
-            <input 
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="audio/*"
-                disabled={isUploading}
-            />
-            <button
-                onClick={handleUploadClick}
-                disabled={isUploading}
-                className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                <p className="font-medium flex items-center gap-2">
-                   {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                   {isUploading ? 'Uploading...' : 'From your device...'}
-                </p>
-            </button>
-        </div>
         </ScrollArea>
       </div>
       <Button onClick={handleStartSession} className="w-full bg-white text-primary hover:bg-white/90">
@@ -199,12 +161,11 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask, selectedDate } = useTasks();
-  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
+  const { musicLibrary } = useMusic();
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddTask = () => {
     let musicData: Task['music'] | undefined;
@@ -237,16 +198,6 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   };
   
   const Icon = task.icon && iconMap[task.icon as string] ? iconMap[task.icon as string] : Pencil;
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      addMusicToLibrary({
-          title: file.name,
-          file: file,
-      });
-    }
-  };
 
   return (
     <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
@@ -308,24 +259,6 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
         <div className="space-y-2">
           <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
           <ScrollArea className="h-40">
-           <input 
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="audio/*"
-              disabled={isUploading}
-          />
-          <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50"
-          >
-              <p className="font-medium flex items-center gap-2">
-                  {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  {isUploading ? 'Uploading...' : 'From your device...'}
-              </p>
-          </button>
           {meditationMusic.map((music) => (
             <button
               key={music.id}
@@ -371,11 +304,10 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
   const { addTask, addDefaultTask, selectedDate } = useTasks();
-  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
+  const { musicLibrary } = useMusic();
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [isDefault, setIsDefault] = useState(false);
 
@@ -416,17 +348,6 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
       onClose();
     }
   };
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      addMusicToLibrary({
-          title: file.name,
-          file: file,
-      });
-    }
-  };
-
 
   return (
     <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
@@ -483,24 +404,6 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
        <div className="space-y-2">
           <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
           <ScrollArea className="h-40">
-            <input 
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="audio/*"
-                disabled={isUploading}
-            />
-            <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-white/10 disabled:opacity-50"
-            >
-                <p className="font-medium flex items-center gap-2">
-                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                    {isUploading ? 'Uploading...' : 'From your device...'}
-                </p>
-            </button>
           {meditationMusic.map((music) => (
             <button
               key={music.id}
