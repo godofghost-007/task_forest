@@ -180,7 +180,9 @@ export default function ProfilePage() {
                         <Settings className="h-5 w-5 text-muted-foreground" />
                         <span className="font-medium">Account Settings</span>
                     </div>
-                     <Button variant="outline" size="sm">Go</Button>
+                    <EditProfileDialog userProfile={userProfile} onSave={setUserProfile}>
+                      <Button variant="outline" size="sm">Go</Button>
+                    </EditProfileDialog>
                  </div>
               </CardContent>
             </Card>
