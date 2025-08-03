@@ -1,110 +1,152 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import { useTasks } from '@/context/task-context';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
+import { CheckCircle2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
-import { Share2, Download } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
 
-const stages = [
-  {
-    day: 1,
-    quote:
-      'Even money trees grow from seeds of little movements. - Anonymous',
-    image: 'https://placehold.co/600x400',
-    hint: 'soil mound',
-    button: 'Plant',
-  },
-  {
-    day: 25,
-    quote:
-      'Just like a plant, the habit of saving requires cultivation. - Anonymous',
-    image: 'https://placehold.co/600x400',
-    hint: 'small sprout',
-    button: 'Water',
-  },
-  {
-    day: 100,
-    quote: "Woohoo!!! Who said money doesn't grow on trees!",
-    image: 'https://placehold.co/600x400',
-    hint: 'mature tree',
-    button: 'Celebrate',
-  },
-];
+// Helper to get the last 7 days
+const getLast7Days = () => {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({
+      date: d,
+      name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+    });
+  }
+  return days;
+};
 
 export default function ProgressPage() {
-  const [progress, setProgress] = React.useState(25);
+  const { tasks } = useTasks();
 
-  const currentStageIndex = progress < 25 ? 0 : progress < 100 ? 1 : 2;
-  const currentStage = stages[currentStageIndex];
+  const completedTasks = tasks.filter((task) => task.completed);
+  const totalTasks = tasks.length;
+  const completionPercentage = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
+
+  const last7Days = getLast7Days();
+
+  // This is a placeholder for real completion data over time.
+  // In a real app, you'd store completion dates for each task.
+  const data = last7Days.map((day, index) => {
+    // Simple mock data logic
+    let completedCount = 0;
+    if (index === 6) { // Today
+      completedCount = completedTasks.length;
+    } else if (index === 5) {
+        completedCount = Math.floor(Math.random() * (totalTasks/2));
+    } else {
+        completedCount = Math.floor(Math.random() * 3);
+    }
+    return {
+      name: day.name,
+      total: completedCount,
+    };
+  });
 
   return (
-    <div className="h-full w-full bg-gradient-to-br from-background to-secondary p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl text-center">
+    <div className="h-full w-full bg-secondary p-4 sm:p-8">
+      <div className="mx-auto max-w-4xl">
         <header className="mb-8">
           <h1 className="font-headline text-4xl font-bold text-foreground">
-            Your Forest is Growing
+            Your Progress
           </h1>
           <p className="text-muted-foreground">
-            Every task you complete helps your tree flourish.
+            A look at your accomplishments and consistency.
           </p>
         </header>
 
-        <Card className="overflow-hidden shadow-lg">
-          <CardContent className="p-6">
-            <div className="mb-4 flex items-center gap-4">
-              <span className="font-bold text-foreground">Day {progress}</span>
-              <Progress value={progress} className="h-3" />
-              <span className="font-bold text-muted-foreground">100</span>
-            </div>
+        <div className="grid gap-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Overall Completion</CardTitle>
+                    <CardDescription>
+                        You've completed {completedTasks.length} out of {totalTasks} tasks.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Progress value={completionPercentage} className="h-3" />
+                    <p className="mt-2 text-right text-sm font-medium text-primary">
+                        {Math.round(completionPercentage)}% Complete
+                    </p>
+                </CardContent>
+            </Card>
 
-            <div className="relative aspect-video w-full">
-              <Image
-                src={currentStage.image}
-                alt={currentStage.hint}
-                data-ai-hint={currentStage.hint}
-                fill
-                className="rounded-md object-cover"
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline">Weekly Activity</CardTitle>
+              <CardDescription>
+                Tasks completed over the last 7 days.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data}>
+                  <XAxis
+                    dataKey="name"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}`}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
+                    contentStyle={{
+                      background: 'hsl(var(--background))',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: 'var(--radius)',
+                    }}
+                  />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-        <div className="mt-8 space-y-8">
-          <p className="font-body text-lg italic text-muted-foreground">
-            "{currentStage.quote}"
-          </p>
-          
-          <div className="flex items-center justify-center gap-4">
-            {progress === 100 ? (
-                <>
-                 <Button size="lg" className="gap-2">
-                    <Download className="h-5 w-5" />
-                    Save to Gallery
-                </Button>
-                 <Button size="lg" variant="outline" className="gap-2">
-                    <Share2 className="h-5 w-5" />
-                    Share Your Win
-                </Button>
-                </>
-            ) : (
-                <Button size="lg" className="w-40">{currentStage.button}</Button>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-16">
-          <p className="mb-2 text-sm text-muted-foreground">Simulate Progress:</p>
-          <Slider
-            defaultValue={[25]}
-            min={1}
-            max={100}
-            step={1}
-            value={[progress]}
-            onValueChange={(value) => setProgress(value[0])}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline">Work Description</CardTitle>
+              <CardDescription>A log of your completed tasks.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {completedTasks.length > 0 ? (
+                <ul className="space-y-3">
+                  {completedTasks.map((task) => (
+                    <li key={task.id} className="flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{task.title}</p>
+                        <p className="text-sm text-muted-foreground">{task.subtitle}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-muted-foreground">
+                  No tasks completed yet. Keep going!
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
