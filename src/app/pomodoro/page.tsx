@@ -1,0 +1,325 @@
+
+'use client';
+
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit } from 'lucide-react';
+import { PlantGrowth } from '@/components/session/plant-growth';
+import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { meditationMusic } from '@/components/dashboard/add-task-modal';
+import { cn } from '@/lib/utils';
+import type { Task } from '@/context/task-context';
+import { AppLayout } from '@/components/layout/app-layout';
+
+function formatTime(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+type SessionType = 'work' | 'shortBreak' | 'longBreak';
+
+export default function PomodoroPage() {
+  const router = useRouter();
+
+  // Pomodoro State
+  const [durations, setDurations] = React.useState({
+    work: 25 * 60,
+    shortBreak: 5 * 60,
+    longBreak: 15 * 60,
+  });
+  const [sessionType, setSessionType] = React.useState<SessionType>('work');
+  const [timeLeft, setTimeLeft] = React.useState(durations.work);
+  const [isActive, setIsActive] = React.useState(false);
+  const [pomodoroCount, setPomodoroCount] = React.useState(0);
+  
+  // Temp state for settings popover
+  const [tempDurations, setTempDurations] = React.useState({
+      work: 25,
+      shortBreak: 5,
+      longBreak: 15,
+  });
+
+  // Music State
+  const [music, setMusic] = React.useState<Task['music'] | null>(null);
+  const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+    if (music) {
+        if (music.fileDataUrl) {
+            setMusicUrl(music.fileDataUrl);
+        } else if (music.id) {
+            setMusicUrl(`/music/${music.id}.mp3`);
+        }
+    } else {
+        setMusicUrl(null);
+    }
+  }, [music]);
+
+  React.useEffect(() => {
+    setTimeLeft(durations[sessionType]);
+    setIsActive(false);
+  }, [sessionType, durations]);
+
+  React.useEffect(() => {
+    let timerId: NodeJS.Timeout | undefined;
+    
+    if (isActive && timeLeft > 0) {
+      timerId = setInterval(() => {
+        setTimeLeft((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isActive) {
+      // Timer finished
+      setIsActive(false);
+      if (sessionType === 'work') {
+        const newPomodoroCount = pomodoroCount + 1;
+        setPomodoroCount(newPomodoroCount);
+        const nextSession: SessionType = newPomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
+        setSessionType(nextSession);
+      } else { // Break finished
+        setSessionType('work');
+      }
+    }
+    return () => clearInterval(timerId);
+  }, [isActive, timeLeft, sessionType, pomodoroCount]);
+
+  React.useEffect(() => {
+    if (audioRef.current) {
+        if (isActive && isAudioPlaying) {
+            audioRef.current.play().catch(e => console.error("Audio play failed", e));
+        } else {
+            audioRef.current.pause();
+        }
+    }
+  }, [isActive, isAudioPlaying, musicUrl]);
+
+  const handleToggleTimer = () => setIsActive(!isActive);
+
+  const handleResetTimer = () => {
+    setIsActive(false);
+    setTimeLeft(durations[sessionType]);
+    if(audioRef.current) {
+        audioRef.current.currentTime = 0;
+    }
+  };
+  
+  const handleSettingsSave = () => {
+    const newDurations = {
+        work: tempDurations.work * 60,
+        shortBreak: tempDurations.shortBreak * 60,
+        longBreak: tempDurations.longBreak * 60,
+    };
+    setDurations(newDurations);
+    if (!isActive) {
+        setTimeLeft(newDurations[sessionType]);
+    }
+  };
+
+  const handleAudioPlayPause = () => setIsAudioPlaying(!isAudioPlaying);
+
+  const handleAudioSeek = (amount: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime += amount;
+    }
+  };
+  
+  const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
+
+  const getSessionTitle = () => {
+    switch(sessionType) {
+        case 'work': return 'Focus Session';
+        case 'shortBreak': return 'Short Break';
+        case 'longBreak': return 'Long Break';
+    }
+  }
+
+  const getSessionIcon = () => {
+    switch(sessionType) {
+        case 'work': return <BrainCircuit className="h-12 w-12" />;
+        case 'shortBreak': return <Coffee className="h-12 w-12" />;
+        case 'longBreak': return <Timer className="h-12 w-12" />;
+    }
+  }
+  
+  return (
+    <AppLayout>
+    <div className="relative h-full w-full">
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+        style={{ 
+            backgroundImage: "url('https://placehold.co/1920x1080/a2d2ff/a2d2ff.png')", 
+            filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`
+        }}
+        data-ai-hint="calm mountain scenery"
+      />
+      <div className={cn(
+          "absolute inset-0 transition-colors duration-1000",
+          sessionType === 'work' && 'bg-black/50',
+          sessionType === 'shortBreak' && 'bg-blue-900/50',
+          sessionType === 'longBreak' && 'bg-indigo-900/50',
+      )} />
+      
+      <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
+        
+        <div className="absolute top-4 right-4 flex gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
+                        <Settings className="h-6 w-6"/>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-background/80 backdrop-blur-md border-white/20 text-foreground">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Pomodoro Settings</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Adjust your session durations (in minutes).
+                            </p>
+                        </div>
+                        <div className="grid gap-2">
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="work-duration">Work</Label>
+                                <Input
+                                    id="work-duration"
+                                    type="number"
+                                    defaultValue={tempDurations.work}
+                                    onChange={(e) => setTempDurations(d => ({...d, work: parseInt(e.target.value, 10)}))}
+                                    className="col-span-2 h-8"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="short-break-duration">Short Break</Label>
+                                <Input
+                                    id="short-break-duration"
+                                    type="number"
+                                    defaultValue={tempDurations.shortBreak}
+                                    onChange={(e) => setTempDurations(d => ({...d, shortBreak: parseInt(e.target.value, 10)}))}
+                                    className="col-span-2 h-8"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="long-break-duration">Long Break</Label>
+                                <Input
+                                    id="long-break-duration"
+                                    type="number"
+                                    defaultValue={tempDurations.longBreak}
+                                    onChange={(e) => setTempDurations(d => ({...d, longBreak: parseInt(e.target.value, 10)}))}
+                                    className="col-span-2 h-8"
+                                />
+                            </div>
+                        </div>
+                         <PopoverClose asChild>
+                            <Button onClick={handleSettingsSave}>Apply Changes</Button>
+                        </PopoverClose>
+                    </div>
+                </PopoverContent>
+            </Popover>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
+                        <Music className="h-6 w-6"/>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-background/80 backdrop-blur-md border-white/20 text-foreground">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Select Music</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Choose some background audio.
+                            </p>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
+                            <button
+                                onClick={() => setMusic(null)}
+                                className={cn("w-full text-left p-2 rounded-md text-sm", !music ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                            >
+                                None
+                            </button>
+                            {meditationMusic.map((m) => (
+                                <button
+                                    key={m.id}
+                                    onClick={() => setMusic(m)}
+                                    className={cn("w-full text-left p-2 rounded-md text-sm", music?.id === m.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                                >
+                                    {m.title}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+        
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
+           <PlantGrowth progress={sessionType === 'work' ? progress : 0} />
+        </div>
+
+
+        <Card className="flex items-center justify-center w-96 h-96 rounded-full bg-black/30 text-white backdrop-blur-sm border-white/20 self-center">
+          <CardContent className="p-6 text-center flex flex-col items-center justify-center">
+            
+            <Tabs value={sessionType} onValueChange={(value) => setSessionType(value as SessionType)} className="w-[300px] mb-2">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="work">Work</TabsTrigger>
+                    <TabsTrigger value="shortBreak">Short Break</TabsTrigger>
+                    <TabsTrigger value="longBreak">Long Break</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
+            <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{getSessionTitle()}</h1>
+            
+            <div className="my-4 flex items-center justify-center gap-2 text-6xl font-bold font-mono">
+                {getSessionIcon()}
+                <span>{formatTime(timeLeft)}</span>
+            </div>
+            
+            <div className="flex justify-center gap-4 mb-4">
+                <Button variant="ghost" size="icon" onClick={handleToggleTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                    {isActive ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                    <RotateCcw className="h-7 w-7" />
+                </Button>
+            </div>
+
+            {musicUrl && (
+                <div className="mt-2 text-white/70">
+                    <div className="flex items-center justify-center gap-2">
+                        <Music className="h-4 w-4" />
+                        <p className="truncate max-w-[200px]">Playing: {music?.title}</p>
+                    </div>
+                    <div className="flex justify-center items-center gap-2 mt-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
+                           <Rewind className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={handleAudioPlayPause}>
+                           {isAudioPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(10)}>
+                           <FastForward className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    <audio 
+                        ref={audioRef} 
+                        src={musicUrl}
+                        onPlay={() => setIsAudioPlaying(true)}
+                        onPause={() => setIsAudioPlaying(false)}
+                        onEnded={() => setIsAudioPlaying(false)}
+                        loop 
+                    />
+                </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+    </AppLayout>
+  );
+}

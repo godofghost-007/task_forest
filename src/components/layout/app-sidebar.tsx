@@ -8,11 +8,11 @@ import {
   Home,
   TrendingUp,
   Trees,
-  Users,
   UserCircle,
   PanelLeft,
   Settings,
   Star,
+  Timer,
 } from 'lucide-react';
 
 import {
@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
+  { href: '/pomodoro', icon: Timer, label: 'Pomodoro' },
   { href: '/progress', icon: TrendingUp, label: 'Progress' },
   { href: '/forest', icon: Trees, label: 'Forest' },
   { href: '/profile', icon: UserCircle, label: 'Profile' },
@@ -89,14 +90,14 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-                <Link
-                  href={item.href}
-                  data-active={pathname === item.href}
-                  className={cn(sidebarMenuButtonVariants({ variant: 'default', size: 'default' }))}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
+              <Link
+                href={item.href}
+                data-active={pathname === item.href}
+                className={cn(sidebarMenuButtonVariants({ variant: 'default', size: 'default' }))}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

@@ -30,6 +30,7 @@ import {
   CalendarIcon,
   Star,
   Timer,
+  Play,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
@@ -108,17 +109,8 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       };
     }
     
-    const query = new URLSearchParams({
-        title: (task.title || 'Mindful Minutes').toUpperCase(),
-        subtitle: musicData ? musicData.title : 'No music',
-        icon: task.icon || 'Heart',
-        duration: parseInt(musicData?.duration || '10', 10).toString(),
-        ...(musicData?.id && { musicId: musicData.id }),
-        ...(musicData?.fileDataUrl && { musicDataUrl: musicData.fileDataUrl }),
-        ...(musicData?.title && { musicTitle: musicData.title }),
-    });
-
-    router.push(`/session/quick?${query.toString()}`);
+    // Simply go to the pomodoro page, which is now the main focus session page.
+    router.push(`/pomodoro`);
     onClose();
   };
   
@@ -707,5 +699,3 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
-
-    
