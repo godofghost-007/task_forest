@@ -93,7 +93,7 @@ import { Label } from '../ui/label';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const router = useRouter();
-  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(meditationMusic[0]);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music'] | undefined>(meditationMusic[0]);
   const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -196,7 +196,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
-  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music'] | undefined>(undefined);
   const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -359,7 +359,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   const { addTask, addDefaultTask, selectedDate } = useTasks();
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
-  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music'] | undefined>(undefined);
   const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));

@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit } from 'lucide-react';
+import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,7 @@ type SessionType = 'work' | 'shortBreak' | 'longBreak';
 
 export default function PomodoroPage() {
   const router = useRouter();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -48,11 +49,14 @@ export default function PomodoroPage() {
   // Music State
   const [music, setMusic] = React.useState<Task['music'] | null>(null);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
+  const [localFile, setLocalFile] = React.useState<{name: string, dataUrl: string} | null>(null);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
 
   React.useEffect(() => {
-    if (music) {
+    if (localFile) {
+        setMusicUrl(localFile.dataUrl);
+    } else if (music) {
         if (music.fileDataUrl) {
             setMusicUrl(music.fileDataUrl);
         } else if (music.id) {
@@ -61,7 +65,7 @@ export default function PomodoroPage() {
     } else {
         setMusicUrl(null);
     }
-  }, [music]);
+  }, [music, localFile]);
 
   React.useEffect(() => {
     setTimeLeft(durations[sessionType]);
@@ -130,6 +134,22 @@ export default function PomodoroPage() {
     }
   };
   
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLocalFile({ name: file.name, dataUrl: e.target?.result as string });
+        setMusic(null);
+      }
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
+
   const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
 
   const getSessionTitle = () => {
@@ -148,6 +168,12 @@ export default function PomodoroPage() {
     }
   }
   
+  const getMusicTitle = () => {
+    if (localFile) return localFile.name;
+    if (music) return music.title;
+    return '';
+  }
+
   return (
     <AppLayout>
     <div className="relative h-full w-full">
@@ -237,20 +263,42 @@ export default function PomodoroPage() {
                         </div>
                         <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                             <button
-                                onClick={() => setMusic(null)}
-                                className={cn("w-full text-left p-2 rounded-md text-sm", !music ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                                onClick={() => { setMusic(null); setLocalFile(null); }}
+                                className={cn("w-full text-left p-2 rounded-md text-sm", !music && !localFile ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
                             >
                                 None
                             </button>
                             {meditationMusic.map((m) => (
                                 <button
                                     key={m.id}
-                                    onClick={() => setMusic(m)}
+                                    onClick={() => { setMusic(m); setLocalFile(null); }}
                                     className={cn("w-full text-left p-2 rounded-md text-sm", music?.id === m.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
                                 >
                                     {m.title}
                                 </button>
                             ))}
+                             <div>
+                                <input 
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept="audio/mp3,audio/*"
+                                />
+                                <button
+                                    onClick={handleUploadClick}
+                                    className={cn(
+                                    "flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm",
+                                    localFile ? "bg-primary text-primary-foreground" : "hover:bg-accent/50"
+                                    )}
+                                >
+                                    <div className="truncate">
+                                        <p>From your device</p>
+                                        {localFile && <p className="text-xs truncate">{localFile.name}</p>}
+                                    </div>
+                                    {localFile && <Check className="h-4 w-4" />}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </PopoverContent>
@@ -293,7 +341,7 @@ export default function PomodoroPage() {
                 <div className="mt-2 text-white/70">
                     <div className="flex items-center justify-center gap-2">
                         <Music className="h-4 w-4" />
-                        <p className="truncate max-w-[200px]">Playing: {music?.title}</p>
+                        <p className="truncate max-w-[200px]">Playing: {getMusicTitle()}</p>
                     </div>
                     <div className="flex justify-center items-center gap-2 mt-1">
                         <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>
