@@ -1,15 +1,21 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useTasks } from '@/context/task-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette } from 'lucide-react';
+import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
+  const [notificationSettings, setNotificationSettings] = useState({
+    reminders: true,
+    autoComplete: false,
+  });
 
   const completedTasks = tasks.filter(task => task.completed);
   const totalTasks = tasks.length;
@@ -133,7 +139,12 @@ export default function ProfilePage() {
                         <Bell className="h-5 w-5 text-muted-foreground" />
                         <span className="font-medium">Push Notifications</span>
                     </div>
-                    <Button variant="outline" size="sm">Manage</Button>
+                     <NotificationsDialog 
+                        settings={notificationSettings} 
+                        onSettingsChange={setNotificationSettings}
+                      >
+                       <Button variant="outline" size="sm">Manage</Button>
+                     </NotificationsDialog>
                  </div>
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
