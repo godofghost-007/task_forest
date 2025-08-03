@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useTasks } from '@/context/task-context';
 import { format } from 'date-fns';
+import { useBackgrounds } from '@/context/background-context';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -25,19 +26,20 @@ function formatTime(seconds: number) {
 
 type SessionType = 'work' | 'shortBreak' | 'longBreak';
 
-const backgrounds = [
-    { url: 'https://placehold.co/1920x1080/2c3e50/ffffff.png', hint: 'rainy night city' },
-    { url: 'https://placehold.co/1920x1080/34495e/ffffff.png', hint: 'cozy coffee shop' },
-    { url: 'https://placehold.co/1920x1080/8e44ad/ffffff.png', hint: 'lofi study room' },
-    { url: 'https://placehold.co/1920x1080/2980b9/ffffff.png', hint: 'peaceful ocean' },
-    { url: 'https://placehold.co/1920x1080/16a085/ffffff.png', hint: 'serene forest' },
-    { url: 'https://placehold.co/1920x1080/a2d2ff/a2d2ff.png', hint: 'calm mountain scenery' }
+const defaultBackgrounds = [
+    { type: 'image', url: 'https://placehold.co/1920x1080/2c3e50/ffffff.png', hint: 'rainy night city' },
+    { type: 'image', url: 'https://placehold.co/1920x1080/34495e/ffffff.png', hint: 'cozy coffee shop' },
+    { type: 'image', url: 'https://placehold.co/1920x1080/8e44ad/ffffff.png', hint: 'lofi study room' },
+    { type: 'image', url: 'https://placehold.co/1920x1080/2980b9/ffffff.png', hint: 'peaceful ocean' },
+    { type: 'image', url: 'https://placehold.co/1920x1080/16a085/ffffff.png', hint: 'serene forest' },
+    { type: 'image', url: 'https://placehold.co/1920x1080/a2d2ff/a2d2ff.png', hint: 'calm mountain scenery' }
 ];
 
 export default function PomodoroPage() {
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addTask } = useTasks();
+  const { pomodoroBackground } = useBackgrounds();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -60,11 +62,15 @@ export default function PomodoroPage() {
   const [tempLongBreakInterval, setTempLongBreakInterval] = React.useState(4);
 
   // Background state
-  const [background, setBackground] = React.useState({ url: '', hint: ''});
+  const [background, setBackground] = React.useState<{ type: 'image' | 'video', url: string, hint?: string }>({ type: 'image', url: '', hint: ''});
 
   React.useEffect(() => {
-    setBackground(backgrounds[Math.floor(Math.random() * backgrounds.length)]);
-  }, []);
+    if (pomodoroBackground) {
+        setBackground(pomodoroBackground);
+    } else {
+        setBackground(defaultBackgrounds[Math.floor(Math.random() * defaultBackgrounds.length)]);
+    }
+  }, [pomodoroBackground]);
 
   // Music State
   const [music, setMusic] = React.useState<any | null>(null);
@@ -210,14 +216,25 @@ export default function PomodoroPage() {
   return (
     <AppLayout>
     <div className="relative h-full w-full">
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-        style={{ 
-            backgroundImage: `url('${background.url}')`, 
-            filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`
-        }}
-        data-ai-hint={background.hint}
-      />
+      {background.type === 'image' ? (
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+          style={{ 
+              backgroundImage: `url('${background.url}')`, 
+              filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`
+          }}
+          data-ai-hint={background.hint || 'background'}
+        />
+      ) : (
+        <video
+            src={background.url}
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            style={{ filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`}}
+        />
+      )}
       <div className={cn(
           "absolute inset-0 transition-colors duration-1000",
           sessionType === 'work' && 'bg-black/50',
@@ -415,5 +432,3 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
-
-    

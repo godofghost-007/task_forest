@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake } from 'lucide-react';
+import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake, Image as ImageIcon, Video, X } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 import { ThemeDialog } from '@/components/profile/theme-dialog';
 import { EditProfileDialog } from '@/components/profile/edit-profile-dialog';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { AppLayout } from '@/components/layout/app-layout';
+import { useBackgrounds } from '@/context/background-context';
 
 export interface UserProfile {
   name: string;
@@ -24,8 +25,74 @@ export interface UserProfile {
   dob?: string;
 }
 
+function BackgroundSelector({ title, description, background, onBackgroundChange }: {
+  title: string;
+  description: string;
+  background: { type: 'image' | 'video'; url: string } | null;
+  onBackgroundChange: (file: File | null) => void;
+}) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      onBackgroundChange(event.target.files[0]);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
+
+  return (
+    <Card className="bg-secondary/50">
+      <CardHeader>
+        <CardTitle className="text-lg font-headline">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="relative w-full aspect-video rounded-md bg-muted overflow-hidden flex items-center justify-center">
+            {background ? (
+              <>
+                {background.type === 'image' ? (
+                  <img src={background.url} className="w-full h-full object-cover" alt="Background preview"/>
+                ) : (
+                  <video src={background.url} className="w-full h-full object-cover" autoPlay loop muted />
+                )}
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={() => onBackgroundChange(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+                <div className="text-center text-muted-foreground">
+                    <ImageIcon className="h-10 w-10 mx-auto" />
+                    <p>No custom background</p>
+                </div>
+            )}
+        </div>
+        <input 
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/png,image/jpeg,video/mp4,video/webm"
+            onChange={handleFileChange}
+        />
+        <Button onClick={handleUploadClick} className="w-full">
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Upload New Background
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function ProfilePage() {
   const { tasks } = useTasks();
+  const { pomodoroBackground, taskSessionBackground, setPomodoroBackground, setTaskSessionBackground } = useBackgrounds();
   const [notificationSettings, setNotificationSettings] = useState({
     reminders: true,
     autoComplete: false,
@@ -48,6 +115,22 @@ export default function ProfilePage() {
   const completionPercentage = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
   const longestStreak = Math.max(0, ...tasks.map(t => t.streak));
   const recentlyCompleted = completedTasks.slice(-3).reverse();
+  
+  const handleBgChange = (setter: Function) => (file: File | null) => {
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setter({
+                type: file.type.startsWith('video') ? 'video' : 'image',
+                url: e.target?.result as string,
+            });
+        };
+        reader.readAsDataURL(file);
+    } else {
+        setter(null);
+    }
+  }
+
 
   return (
     <AppLayout>
@@ -141,6 +224,28 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           </div>
+          
+          {/* Background Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline">Background Settings</CardTitle>
+              <CardDescription>Customize the backgrounds for your focus sessions.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+              <BackgroundSelector 
+                title="Pomodoro Background"
+                description="Set a custom background for the main Pomodoro timer."
+                background={pomodoroBackground}
+                onBackgroundChange={handleBgChange(setPomodoroBackground)}
+              />
+               <BackgroundSelector 
+                title="Task Session Background"
+                description="This background appears when you start a specific task."
+                background={taskSessionBackground}
+                onBackgroundChange={handleBgChange(setTaskSessionBackground)}
+              />
+            </CardContent>
+          </Card>
 
           <div className="grid gap-8 lg:grid-cols-2">
               {/* Recent Activity */}
