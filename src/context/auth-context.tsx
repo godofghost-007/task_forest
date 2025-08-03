@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
@@ -28,8 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDoc.exists()) {
             setUsername(userDoc.data().username);
         } else {
-            // Handle case for users who signed up with Google but don't have a doc yet
-            // This case is handled in AuthForm, but as a fallback:
+            // This case can happen for a brief moment with Google Sign-In
+            // before the document is created in AuthForm.
+            // We provide a fallback username.
             setUsername(user.displayName || user.email?.split('@')[0] || 'User');
         }
       } else {

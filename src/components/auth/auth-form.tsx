@@ -31,10 +31,12 @@ export function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
@@ -42,6 +44,7 @@ export function AuthForm() {
       } else {
         if (!username) {
           toast({ title: 'Username is required for sign up', variant: 'destructive' });
+          setLoading(false);
           return;
         }
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -53,21 +56,22 @@ export function AuthForm() {
       }
     } catch (error: any) {
       toast({ title: 'Authentication Error', description: error.message, variant: 'destructive' });
+    } finally {
+        setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if user already exists in Firestore
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // New user, create a document in Firestore
              await setDoc(userDocRef, {
                 username: user.displayName || user.email?.split('@')[0],
                 email: user.email,
@@ -77,6 +81,8 @@ export function AuthForm() {
         toast({ title: "Logged in successfully with Google!" });
     } catch (error: any) {
         toast({ title: "Google Sign-In Error", description: error.message, variant: 'destructive' });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -126,6 +132,7 @@ export function AuthForm() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                disabled={loading}
               />
             )}
             <Input
@@ -134,6 +141,7 @@ export function AuthForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
             <Input
               type="password"
@@ -141,9 +149,10 @@ export function AuthForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Login' : 'Sign Up'}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Processing...' : (isLogin ? 'Login' : 'Sign Up')}
             </Button>
           </form>
 
@@ -152,12 +161,12 @@ export function AuthForm() {
                 <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">OR</span>
             </div>
 
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Sign in with Google
             </Button>
 
-          <Button variant="link" onClick={() => setIsLogin(!isLogin)} className="mt-4 w-full text-sm">
+          <Button variant="link" onClick={() => setIsLogin(!isLogin)} className="mt-4 w-full text-sm" disabled={loading}>
             {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Login'}
           </Button>
         </CardContent>
