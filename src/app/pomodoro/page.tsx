@@ -138,7 +138,7 @@ export default function PomodoroPage() {
       }
     }
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, sessionType, durations, pomodoroCount, longBreakInterval, addTask]);
 
   React.useEffect(() => {
     if (audioRef.current) {
@@ -460,3 +460,5 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
+
+    

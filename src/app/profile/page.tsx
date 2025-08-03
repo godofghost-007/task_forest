@@ -32,7 +32,10 @@ export interface UserProfile {
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
+  const { backgroundLibrary, addBackgroundToLibrary, removeBackground, setPomodoroBackground, setTaskSessionBackground, isUploading: isBgUploading } = useBackgrounds();
   const { musicLibrary, addMusicToLibrary, removeMusic, isUploading: isMusicUploading } = useMusic();
+  
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
   const musicFileInputRef = useRef<HTMLInputElement>(null);
   
   const [notificationSettings, setNotificationSettings] = useState({
@@ -58,6 +61,17 @@ export default function ProfilePage() {
   const completionPercentage = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
   const longestStreak = Math.max(0, ...tasks.map(t => t.streak));
   const recentlyCompleted = completedTasks.slice(-3).reverse();
+
+  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      addBackgroundToLibrary({
+          type: file.type.startsWith('video') ? 'video' : 'image',
+          title: file.name,
+          file: file,
+      });
+    }
+  };
 
   const handleMusicFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -163,7 +177,81 @@ export default function ProfilePage() {
             </Card>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-1">
+          <div className="grid gap-8 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center justify-between">
+                        <span>Background Library</span>
+                         <input
+                            type="file"
+                            ref={bgFileInputRef}
+                            className="hidden"
+                            accept="image/*,video/*"
+                            onChange={handleBgFileChange}
+                            disabled={isBgUploading}
+                        />
+                        <Button size="sm" onClick={() => bgFileInputRef.current?.click()} disabled={isBgUploading}>
+                            {isBgUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                            <span className="ml-2">Upload</span>
+                        </Button>
+                    </CardTitle>
+                    <CardDescription>Manage your custom backgrounds for focus sessions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-72">
+                        {backgroundLibrary.length > 0 ? (
+                            <div className="space-y-2 pr-4">
+                                {backgroundLibrary.map(bg => (
+                                    <div key={bg.id} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                                        <div className="flex items-center gap-3">
+                                            {bg.type === 'image' ? <ImageIcon className="h-5 w-5 text-primary" /> : <Video className="h-5 w-5 text-primary" />}
+                                            <p className="font-medium text-sm truncate">{bg.title}</p>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="sm">Apply</Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-48">
+                                                    <div className="grid gap-2">
+                                                        <Label className="text-xs font-bold text-muted-foreground">APPLY TO</Label>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => setPomodoroBackground(bg)}>Pomodoro</Button>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => setTaskSessionBackground(bg)}>Task Session</Button>
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will permanently delete this background from your library.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => removeBackground(bg)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
+                                <ImageIcon className="h-12 w-12 mb-2"/>
+                                <p className="font-semibold">Your library is empty</p>
+                                <p className="text-sm">Upload images or videos to get started.</p>
+                            </div>
+                        )}
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center justify-between">
@@ -299,3 +387,5 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
+
+    
