@@ -7,7 +7,7 @@ import { useTasks } from '@/context/task-context';
 import type { Task } from '@/context/task-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Music, Timer } from 'lucide-react';
+import { Check, Music, Timer, Pause, Play, RotateCcw } from 'lucide-react';
 import Image from 'next/image';
 
 function formatTime(seconds: number) {
@@ -23,9 +23,16 @@ export default function TaskSessionPage() {
   const [task, setTask] = React.useState<Task | null>(null);
   const [timeLeft, setTimeLeft] = React.useState(0);
   const [isCompleted, setIsCompleted] = React.useState(false);
+  const [isPaused, setIsPaused] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
 
   const taskId = params.taskId as string;
+  
+  const initialDuration = React.useMemo(() => {
+    const currentTask = tasks.find((t) => t.id === taskId);
+    return (currentTask?.duration || 0) * 60;
+  }, [taskId, tasks]);
+
 
   React.useEffect(() => {
     const currentTask = tasks.find((t) => t.id === taskId);
@@ -42,7 +49,7 @@ export default function TaskSessionPage() {
   }, [taskId, tasks, router]);
 
   React.useEffect(() => {
-    if (!task || isCompleted || timeLeft <= 0) {
+    if (!task || isCompleted || timeLeft <= 0 || isPaused) {
         if (timeLeft <= 0 && task && !task.completed) {
             setIsCompleted(true);
         }
@@ -54,17 +61,17 @@ export default function TaskSessionPage() {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [task, timeLeft, isCompleted]);
+  }, [task, timeLeft, isCompleted, isPaused]);
 
   React.useEffect(() => {
     if (audioRef.current) {
-        if (!isCompleted && task?.music) {
+        if (!isCompleted && task?.music && !isPaused) {
             audioRef.current.play().catch(e => console.error("Audio play failed", e));
         } else {
             audioRef.current.pause();
         }
     }
-  }, [isCompleted, task?.music])
+  }, [isCompleted, isPaused, task?.music])
 
 
   const handleCompleteTask = () => {
@@ -73,6 +80,12 @@ export default function TaskSessionPage() {
     }
     router.push('/');
   };
+
+  const handleResetTimer = () => {
+    setTimeLeft(initialDuration);
+    setIsPaused(false);
+  };
+  
 
   if (!task) {
     return <div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div>;
@@ -102,6 +115,18 @@ export default function TaskSessionPage() {
                 <Timer className="h-12 w-12" />
                 <span>{formatTime(timeLeft)}</span>
             </div>
+            
+            {!isCompleted && !task.completed && (
+                <div className="flex justify-center gap-4 mb-8">
+                    <Button variant="ghost" size="icon" onClick={() => setIsPaused(!isPaused)} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                        {isPaused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleResetTimer} className="h-14 w-14 rounded-full bg-white/20 text-white hover:bg-white/30">
+                        <RotateCcw className="h-7 w-7" />
+                    </Button>
+                </div>
+            )}
+
 
             {isCompleted && !task.completed && (
                 <div className="space-y-4">
@@ -135,4 +160,3 @@ export default function TaskSessionPage() {
     </div>
   );
 }
-
