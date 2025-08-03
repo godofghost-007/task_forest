@@ -17,6 +17,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { useTasks } from '@/context/task-context';
 import { format } from 'date-fns';
 import { useBackgrounds } from '@/context/background-context';
+import { useMusic } from '@/context/music-context';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -40,6 +41,7 @@ export default function PomodoroPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addTask } = useTasks();
   const { pomodoroBackground } = useBackgrounds();
+  const { customMusic, addCustomMusic } = useMusic();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -75,23 +77,28 @@ export default function PomodoroPage() {
   // Music State
   const [music, setMusic] = React.useState<any | null>(null);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
-  const [localFile, setLocalFile] = React.useState<{name: string, dataUrl: string} | null>(null);
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = React.useState(false);
+  const [selectedMusicId, setSelectedMusicId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (localFile) {
-        setMusicUrl(localFile.dataUrl);
-    } else if (music) {
-        if (music.fileDataUrl) {
-            setMusicUrl(music.fileDataUrl);
-        } else if (music.id) {
-            setMusicUrl(`/music/${music.id}.mp3`);
+    if (selectedMusicId) {
+        const standardMusic = meditationMusic.find(m => m.id === selectedMusicId);
+        if (standardMusic) {
+            setMusicUrl(`/music/${standardMusic.id}.mp3`);
+            setMusic(standardMusic);
+            return;
         }
-    } else {
-        setMusicUrl(null);
+        const custom = customMusic.find(m => m.id === selectedMusicId);
+        if (custom) {
+            setMusicUrl(custom.dataUrl);
+            setMusic(custom);
+            return;
+        }
     }
-  }, [music, localFile]);
+    setMusicUrl(null);
+    setMusic(null);
+  }, [selectedMusicId, customMusic]);
 
   React.useEffect(() => {
     setTimeLeft(durations[sessionType]);
@@ -178,8 +185,13 @@ export default function PomodoroPage() {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
-        setLocalFile({ name: file.name, dataUrl: e.target?.result as string });
-        setMusic(null);
+        const newMusic = {
+            id: `custom-${Date.now()}`,
+            title: file.name,
+            dataUrl: e.target?.result as string,
+        };
+        addCustomMusic(newMusic);
+        setSelectedMusicId(newMusic.id);
       }
       reader.readAsDataURL(file);
     }
@@ -205,12 +217,6 @@ export default function PomodoroPage() {
         case 'shortBreak': return <Coffee className="h-12 w-12" />;
         case 'longBreak': return <Timer className="h-12 w-12" />;
     }
-  }
-  
-  const getMusicTitle = () => {
-    if (localFile) return localFile.name;
-    if (music) return music.title;
-    return '';
   }
 
   return (
@@ -322,16 +328,25 @@ export default function PomodoroPage() {
                         </div>
                         <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                             <button
-                                onClick={() => { setMusic(null); setLocalFile(null); }}
-                                className={cn("w-full text-left p-2 rounded-md text-sm", !music && !localFile ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                                onClick={() => setSelectedMusicId(null)}
+                                className={cn("w-full text-left p-2 rounded-md text-sm", !selectedMusicId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
                             >
                                 None
                             </button>
                             {meditationMusic.map((m) => (
                                 <button
                                     key={m.id}
-                                    onClick={() => { setMusic(m); setLocalFile(null); }}
-                                    className={cn("w-full text-left p-2 rounded-md text-sm", music?.id === m.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                                    onClick={() => setSelectedMusicId(m.id)}
+                                    className={cn("w-full text-left p-2 rounded-md text-sm", selectedMusicId === m.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
+                                >
+                                    {m.title}
+                                </button>
+                            ))}
+                            {customMusic.map((m) => (
+                                <button
+                                    key={m.id}
+                                    onClick={() => setSelectedMusicId(m.id)}
+                                    className={cn("w-full text-left p-2 rounded-md text-sm", selectedMusicId === m.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
                                 >
                                     {m.title}
                                 </button>
@@ -346,16 +361,9 @@ export default function PomodoroPage() {
                                 />
                                 <button
                                     onClick={handleUploadClick}
-                                    className={cn(
-                                    "flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm",
-                                    localFile ? "bg-primary text-primary-foreground" : "hover:bg-accent/50"
-                                    )}
+                                    className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm hover:bg-accent/50"
                                 >
-                                    <div className="truncate">
-                                        <p>From your device</p>
-                                        {localFile && <p className="text-xs truncate">{localFile.name}</p>}
-                                    </div>
-                                    {localFile && <Check className="h-4 w-4" />}
+                                    <p>From your device...</p>
                                 </button>
                             </div>
                         </div>
@@ -365,7 +373,7 @@ export default function PomodoroPage() {
         </div>
         
         <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
-           <PlantGrowth progress={sessionType === 'work' ? progress : 0} />
+           {!pomodoroBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
         </div>
 
 
@@ -400,7 +408,7 @@ export default function PomodoroPage() {
                 <div className="mt-2 text-white/70">
                     <div className="flex items-center justify-center gap-2">
                         <Music className="h-4 w-4" />
-                        <p className="truncate max-w-[200px]">Playing: {getMusicTitle()}</p>
+                        <p className="truncate max-w-[200px]">Playing: {music?.title}</p>
                     </div>
                     <div className="flex justify-center items-center gap-2 mt-1">
                         <Button variant="ghost" size="icon" onClick={() => handleAudioSeek(-10)}>

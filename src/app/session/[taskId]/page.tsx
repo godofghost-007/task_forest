@@ -12,6 +12,7 @@ import { PlantGrowth } from '@/components/session/plant-growth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useBackgrounds } from '@/context/background-context';
 import { cn } from '@/lib/utils';
+import { useMusic } from '@/context/music-context';
 
 
 function formatTime(seconds: number) {
@@ -36,6 +37,7 @@ export default function TaskSessionPage() {
   const params = useParams();
   const { tasks, completeTask } = useTasks();
   const { taskSessionBackground } = useBackgrounds();
+  const { customMusic } = useMusic();
   const [task, setTask] = React.useState<Task | null>(null);
 
   // Pomodoro State
@@ -88,14 +90,19 @@ export default function TaskSessionPage() {
         if (currentTask.music.fileDataUrl) {
            setMusicUrl(currentTask.music.fileDataUrl);
         } else if (currentTask.music.id) {
-           setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+            const custom = customMusic.find(m => m.id === currentTask.music?.id);
+            if (custom) {
+                setMusicUrl(custom.dataUrl);
+            } else {
+                setMusicUrl(`/music/${currentTask.music.id}.mp3`);
+            }
         }
       }
 
     } else {
       router.push('/');
     }
-  }, [taskId, tasks, router]);
+  }, [taskId, tasks, router, customMusic]);
 
   React.useEffect(() => {
     if (task && !task.completed) {
@@ -219,8 +226,8 @@ export default function TaskSessionPage() {
         
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
           
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
-             <PlantGrowth progress={sessionType === 'work' ? progress : 0} />
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
+             {!taskSessionBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
           </div>
 
 

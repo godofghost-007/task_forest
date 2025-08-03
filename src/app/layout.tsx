@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TaskProvider } from '@/context/task-context';
 import { ThemeProvider } from '@/context/theme-context';
 import { BackgroundProvider } from '@/context/background-context';
+import { MusicProvider } from '@/context/music-context';
 
 export const metadata: Metadata = {
   title: 'Task Forest',
@@ -34,9 +35,11 @@ export default function RootLayout({
       <body className={cn('font-body antialiased')}>
         <ThemeProvider>
           <BackgroundProvider>
-            <TaskProvider>
-                {children}
-            </TaskProvider>
+            <MusicProvider>
+              <TaskProvider>
+                  {children}
+              </TaskProvider>
+            </MusicProvider>
           </BackgroundProvider>
         </ThemeProvider>
         <Toaster />
