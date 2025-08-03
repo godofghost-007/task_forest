@@ -104,7 +104,7 @@ const initialTasks: Task[] = [
   },
   {
     id: '6',
-    icon: 'Pill',
+    icon: 'Star',
     title: 'TAKE VITAMINS',
     streak: 4,
     subtitle: 'Daily*',

@@ -67,7 +67,7 @@ export function ForestGrid({ completedTasks }: ForestGridProps) {
             const milestone = milestoneElements
                 .slice() // Create a copy to not mutate the original
                 .reverse() // Check from highest streak to lowest
-                .find(m => task.streak >= m.streak);
+                .find(m => (task.streak || 0) >= m.streak);
 
             if (milestone) {
                 return {

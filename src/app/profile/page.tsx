@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 export interface UserProfile {
   name: string;
@@ -212,11 +213,13 @@ export default function ProfilePage() {
                                                 <PopoverTrigger asChild>
                                                     <Button variant="ghost" size="sm">Apply</Button>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-48">
-                                                    <div className="grid gap-2">
-                                                        <Label className="text-xs font-bold text-muted-foreground">APPLY TO</Label>
+                                                <PopoverContent className="w-48 p-2">
+                                                    <div className="grid gap-1">
+                                                        <Label className="text-xs font-bold text-muted-foreground px-2 py-1">APPLY TO</Label>
                                                         <Button variant="ghost" size="sm" className="justify-start" onClick={() => setPomodoroBackground(bg)}>Pomodoro</Button>
                                                         <Button variant="ghost" size="sm" className="justify-start" onClick={() => setTaskSessionBackground(bg)}>Task Session</Button>
+                                                        <Separator className="my-1"/>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setPomodoroBackground(null); setTaskSessionBackground(null); }}>Remove from All</Button>
                                                     </div>
                                                 </PopoverContent>
                                             </Popover>
@@ -286,12 +289,13 @@ export default function ProfilePage() {
                                                 <PopoverTrigger asChild>
                                                     <Button variant="ghost" size="sm">Apply</Button>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-48">
-                                                    <div className="grid gap-2">
-                                                        <Label className="text-xs font-bold text-muted-foreground">APPLY TO</Label>
+                                                <PopoverContent className="w-48 p-2">
+                                                    <div className="grid gap-1">
+                                                        <Label className="text-xs font-bold text-muted-foreground px-2 py-1">APPLY TO</Label>
                                                         <Button variant="ghost" size="sm" className="justify-start" onClick={() => setPomodoroMusic(music)}>Pomodoro</Button>
                                                         <Button variant="ghost" size="sm" className="justify-start" onClick={() => setTaskSessionMusic(music)}>Task Session</Button>
-                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setPomodoroMusic(null); setTaskSessionMusic(null); }}>Remove All</Button>
+                                                        <Separator className="my-1"/>
+                                                        <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setPomodoroMusic(null); setTaskSessionMusic(null); }}>Remove from All</Button>
                                                     </div>
                                                 </PopoverContent>
                                             </Popover>
@@ -390,7 +394,7 @@ export default function ProfilePage() {
                           <span className="font-medium">Account Settings</span>
                       </div>
                       <EditProfileDialog userProfile={userProfile} onSave={setUserProfile}>
-                        <Button variant="outline" size="sm">Go</Button>
+                        <Button variant="outline" size="sm">Manage</Button>
                       </EditProfileDialog>
                    </div>
                 </CardContent>
@@ -402,7 +406,3 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
-
-    
-
-    

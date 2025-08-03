@@ -32,19 +32,18 @@ const getLast7Days = () => {
 
 export default function ProgressPage() {
   const { tasks } = useTasks();
-  const [chartData, setChartData] = React.useState<any[]>([]);
-
+  
   const completedTasks = tasks.filter((task) => task.completed);
   const totalTasks = tasks.length;
   const completionPercentage = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
 
-  React.useEffect(() => {
+  const chartData = React.useMemo(() => {
     const last7Days = getLast7Days();
     const dailyCompletedTasks = tasks.filter((task) => task.completed);
 
     // This is a placeholder for real completion data over time.
     // In a real app, you'd store completion dates for each task.
-    const data = last7Days.map((day, index) => {
+    return last7Days.map((day, index) => {
       // Simple mock data logic
       let completedCount = 0;
       if (index === 6) { // Today
@@ -62,8 +61,6 @@ export default function ProgressPage() {
         total: completedCount,
       };
     });
-
-    setChartData(data);
   }, [tasks]);
 
 
