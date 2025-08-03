@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, Music, Timer, Pause, Play, RotateCcw, Rewind, FastForward } from 'lucide-react';
 import Image from 'next/image';
+import { PlantGrowth } from '@/components/session/plant-growth';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -138,6 +139,8 @@ export default function TaskSessionPage() {
     return <div className="flex h-full w-full items-center justify-center bg-secondary"><p>Loading task...</p></div>;
   }
   
+  const progress = initialDuration > 0 ? (initialDuration - timeLeft) / initialDuration : 0;
+  
   return (
     <div className="relative h-dvh w-full">
       <Image
@@ -155,6 +158,8 @@ export default function TaskSessionPage() {
           <CardContent className="p-6 text-center">
             <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
             <p className="text-white/80">{task.subtitle}</p>
+
+            <PlantGrowth progress={progress} />
             
             <div className="my-8 flex items-center justify-center gap-2 text-6xl font-bold font-mono">
                 <Timer className="h-12 w-12" />
