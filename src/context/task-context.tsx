@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 // Using an interface for the task to match task-item.tsx
 export interface Task {
@@ -115,6 +116,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today);
+  const { toast } = useToast();
 
   const addTask = (task: Task) => {
     setTasks((prevTasks) => [...prevTasks, task]);
@@ -134,6 +136,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         task.id === taskId ? { ...task, completed: true, streak: task.streak + 1 } : task
       )
     );
+    toast({
+        title: "Task Completed!",
+        description: "Yup you completed your task buddy keep it up we both concur the world if you stay regular and in constant towards your task",
+    });
   };
 
   return (
