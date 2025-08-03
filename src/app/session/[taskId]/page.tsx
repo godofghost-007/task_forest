@@ -87,9 +87,7 @@ export default function TaskSessionPage() {
       }
       
       if (currentTask.music) {
-        if (currentTask.music.fileDataUrl) {
-           setMusicUrl(currentTask.music.fileDataUrl);
-        } else if (currentTask.music.id) {
+        if (currentTask.music.id) {
             const custom = musicLibrary.find(m => m.id === currentTask.music?.id);
             if (custom) {
                 setMusicUrl(custom.url);

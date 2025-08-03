@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check, Image as ImageIcon, Loader2, Upload } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -39,10 +39,11 @@ const defaultBackgrounds = [
 
 export default function PomodoroPage() {
   const router = useRouter();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const musicFileInputRef = React.useRef<HTMLInputElement>(null);
+  const bgFileInputRef = React.useRef<HTMLInputElement>(null);
   const { addTask } = useTasks();
-  const { pomodoroBackground, setPomodoroBackground, backgroundLibrary } = useBackgrounds();
-  const { musicLibrary, addMusicToLibrary, isUploading } = useMusic();
+  const { pomodoroBackground, setPomodoroBackground, backgroundLibrary, addBackgroundToLibrary, isUploading: isBgUploading } = useBackgrounds();
+  const { musicLibrary, addMusicToLibrary, isUploading: isMusicUploading } = useMusic();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -181,7 +182,7 @@ export default function PomodoroPage() {
     }
   };
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMusicFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       addMusicToLibrary({
@@ -190,10 +191,17 @@ export default function PomodoroPage() {
       });
     }
   };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  }
+  
+  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        addBackgroundToLibrary({
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            title: file.name,
+            file: file,
+        });
+    }
+  };
 
   const progress = durations[sessionType] > 0 ? (durations[sessionType] - timeLeft) / durations[sessionType] : 0;
 
@@ -256,7 +264,25 @@ export default function PomodoroPage() {
                     </div>
                     <ScrollArea className="h-60 mt-4">
                         <div className="grid grid-cols-2 gap-2 pr-2">
-                             <button onClick={() => setPomodoroBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
+                             <input
+                                type="file"
+                                ref={bgFileInputRef}
+                                className="hidden"
+                                accept="image/png,image/jpeg,video/mp4,video/webm"
+                                onChange={handleBgFileChange}
+                                disabled={isBgUploading}
+                            />
+                             <button
+                                onClick={() => bgFileInputRef.current?.click()}
+                                disabled={isBgUploading}
+                                className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                            >
+                                <div className="text-center">
+                                    {isBgUploading ? <Loader2 className="h-6 w-6 animate-spin"/> : <Upload className="h-6 w-6"/>}
+                                    {isBgUploading ? 'Uploading...' : 'From device'}
+                                </div>
+                            </button>
+                            <button onClick={() => setPomodoroBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
                                 Use Default
                             </button>
                             {backgroundLibrary.map(bg => (
@@ -353,6 +379,24 @@ export default function PomodoroPage() {
                             </p>
                         </div>
                         <ScrollArea className="max-h-60 overflow-y-auto space-y-1 pr-2">
+                             <input 
+                                type="file"
+                                ref={musicFileInputRef}
+                                onChange={handleMusicFileChange}
+                                className="hidden"
+                                accept="audio/*"
+                                disabled={isMusicUploading}
+                            />
+                            <button
+                                onClick={() => musicFileInputRef.current?.click()}
+                                disabled={isMusicUploading}
+                                className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm hover:bg-accent/50 disabled:opacity-50"
+                            >
+                                <p className="flex items-center gap-2">
+                                    {isMusicUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4"/>}
+                                    {isMusicUploading ? 'Uploading...' : 'From your device...'}
+                                </p>
+                            </button>
                             <button
                                 onClick={() => setSelectedMusicId(null)}
                                 className={cn("w-full text-left p-2 rounded-md text-sm", !selectedMusicId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
@@ -377,26 +421,6 @@ export default function PomodoroPage() {
                                     {m.title}
                                 </button>
                             ))}
-                             <div>
-                                <input 
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                    className="hidden"
-                                    accept="audio/mp3,audio/*"
-                                    disabled={isUploading}
-                                />
-                                <button
-                                    onClick={handleUploadClick}
-                                    disabled={isUploading}
-                                    className="flex w-full items-center justify-between rounded-lg p-2 text-left transition-colors text-sm hover:bg-accent/50 disabled:opacity-50"
-                                >
-                                    <p className="flex items-center gap-2">
-                                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Music className="h-4 w-4"/>}
-                                        {isUploading ? 'Uploading...' : 'From your device...'}
-                                    </p>
-                                </button>
-                            </div>
                         </ScrollArea>
                     </div>
                 </PopoverContent>

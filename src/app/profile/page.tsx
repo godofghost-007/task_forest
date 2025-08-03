@@ -7,17 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake, Image as ImageIcon, Video, X, Music, Trash2, Check, Loader2 } from 'lucide-react';
+import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette, Cake } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 import { ThemeDialog } from '@/components/profile/theme-dialog';
 import { EditProfileDialog } from '@/components/profile/edit-profile-dialog';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useBackgrounds } from '@/context/background-context';
-import { useMusic } from '@/context/music-context';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export interface UserProfile {
   name: string;
@@ -31,8 +26,6 @@ export interface UserProfile {
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
-  const { backgroundLibrary, addBackgroundToLibrary, removeBackground, setPomodoroBackground, setTaskSessionBackground, isUploading: isBgUploading } = useBackgrounds();
-  const { musicLibrary, addMusicToLibrary, removeMusic, isUploading: isMusicUploading } = useMusic();
   
   const [notificationSettings, setNotificationSettings] = useState({
     reminders: true,
@@ -49,8 +42,6 @@ export default function ProfilePage() {
     dob: '1995-08-15',
   });
 
-  const bgFileInputRef = React.useRef<HTMLInputElement>(null);
-  const musicFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const isBirthday = userProfile.dob ? isSameDay(parseISO(userProfile.dob), new Date()) : false;
 
@@ -60,26 +51,6 @@ export default function ProfilePage() {
   const longestStreak = Math.max(0, ...tasks.map(t => t.streak));
   const recentlyCompleted = completedTasks.slice(-3).reverse();
   
-  const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-        const file = event.target.files[0];
-        addBackgroundToLibrary({
-            type: file.type.startsWith('video') ? 'video' : 'image',
-            title: file.name,
-            file: file,
-        });
-    }
-  };
-
-  const handleMusicFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      addMusicToLibrary({
-        title: file.name,
-        file: file,
-      });
-    }
-  };
 
   return (
     <AppLayout>
@@ -174,141 +145,6 @@ export default function ProfilePage() {
             </Card>
           </div>
           
-          {/* Background Library */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Background Library</CardTitle>
-              <CardDescription>Manage your custom backgrounds for focus sessions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="w-full h-64">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pr-4">
-                        <input
-                            type="file"
-                            ref={bgFileInputRef}
-                            className="hidden"
-                            accept="image/png,image/jpeg,video/mp4,video/webm"
-                            onChange={handleBgFileChange}
-                            disabled={isBgUploading}
-                        />
-                        <button
-                            onClick={() => bgFileInputRef.current?.click()}
-                            disabled={isBgUploading}
-                            className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <div className="text-center">
-                                {isBgUploading ? (
-                                    <Loader2 className="h-8 w-8 mx-auto animate-spin" />
-                                ) : (
-                                    <ImageIcon className="h-8 w-8 mx-auto" />
-                                )}
-                                <span className="text-xs">{isBgUploading ? 'Uploading...' : 'Upload New'}</span>
-                            </div>
-                        </button>
-                        {backgroundLibrary.map((bg) => (
-                           <Popover key={bg.id}>
-                               <PopoverTrigger asChild>
-                                    <div className="relative aspect-video w-full rounded-md overflow-hidden group cursor-pointer">
-                                        {bg.type === 'image' ? (
-                                            <img src={bg.url} alt={bg.title} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <video src={bg.url} muted loop className="w-full h-full object-cover" />
-                                        )}
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                            <p className="text-white text-xs text-center p-1 truncate">{bg.title}</p>
-                                        </div>
-                                    </div>
-                               </PopoverTrigger>
-                               <PopoverContent className="w-56">
-                                   <div className="space-y-2">
-                                       <Button onClick={() => setPomodoroBackground(bg)} className="w-full" variant="outline">Set for Pomodoro</Button>
-                                       <Button onClick={() => setTaskSessionBackground(bg)} className="w-full" variant="outline">Set for Tasks</Button>
-                                       <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" className="w-full">Delete</Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This will permanently delete the background from your library. This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => removeBackground(bg)}>Continue</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-
-                                   </div>
-                               </PopoverContent>
-                           </Popover>
-                        ))}
-                    </div>
-                </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Music Library */}
-           <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Music Library</CardTitle>
-              <CardDescription>Manage your custom audio tracks for focus sessions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <input
-                    type="file"
-                    ref={musicFileInputRef}
-                    className="hidden"
-                    accept="audio/*"
-                    onChange={handleMusicFileChange}
-                    disabled={isMusicUploading}
-                />
-                <Button onClick={() => musicFileInputRef.current?.click()} className="mb-4" disabled={isMusicUploading}>
-                    {isMusicUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Music className="mr-2 h-4 w-4" />}
-                    {isMusicUploading ? 'Uploading...' : 'Upload New Music'}
-                </Button>
-                <ScrollArea className="w-full h-48">
-                    <div className="space-y-2 pr-4">
-                        {musicLibrary.length > 0 ? musicLibrary.map((track) => (
-                           <div key={track.id} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                               <div className="flex items-center gap-3">
-                                   <Music className="h-5 w-5 text-muted-foreground"/>
-                                   <p className="text-sm font-medium truncate">{track.title}</p>
-                               </div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                            <Trash2 className="h-4 w-4"/>
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                     <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will permanently delete the audio track from your library. This action cannot be undone.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => removeMusic(track)}>Continue</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                           </div>
-                        )) : (
-                            <div className="flex flex-col items-center justify-center rounded-md border-2 border-dashed h-32 text-muted-foreground">
-                                <Music className="h-8 w-8 mb-2"/>
-                                <p>Your music library is empty.</p>
-                                <p className="text-xs">Upload your first track!</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-            </CardContent>
-          </Card>
-
           <div className="grid gap-8 lg:grid-cols-2">
               {/* Recent Activity */}
               <Card>
