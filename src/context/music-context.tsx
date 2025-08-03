@@ -3,49 +3,58 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type CustomMusic = {
+export type MusicFile = {
     id: string;
     title: string;
-    dataUrl: string;
+    url: string;
 };
 
 interface MusicContextType {
-  customMusic: CustomMusic[];
-  addCustomMusic: (music: CustomMusic) => void;
+  musicLibrary: MusicFile[];
+  addMusicToLibrary: (music: MusicFile) => void;
+  removeMusic: (id: string) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
 export function MusicProvider({ children }: { children: ReactNode }) {
-  const [customMusic, setCustomMusic] = useState<CustomMusic[]>([]);
+  const [musicLibrary, setMusicLibrary] = useState<MusicFile[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     try {
-      const savedMusic = localStorage.getItem('customMusic');
+      const savedMusic = localStorage.getItem('musicLibrary');
       if (savedMusic) {
-        setCustomMusic(JSON.parse(savedMusic));
+        setMusicLibrary(JSON.parse(savedMusic));
       }
     } catch (error) {
-      console.error("Failed to parse custom music from localStorage", error);
+      console.error("Failed to parse music library from localStorage", error);
     }
     setIsLoaded(true);
   }, []);
 
-  const addCustomMusic = (music: CustomMusic) => {
-    setCustomMusic((prevMusic) => {
+  const addMusicToLibrary = (music: MusicFile) => {
+    setMusicLibrary((prevMusic) => {
         const newMusic = [...prevMusic, music];
-        localStorage.setItem('customMusic', JSON.stringify(newMusic));
+        localStorage.setItem('musicLibrary', JSON.stringify(newMusic));
         return newMusic;
     });
   };
+
+  const removeMusic = (id: string) => {
+    setMusicLibrary((prevMusic) => {
+        const newMusic = prevMusic.filter(m => m.id !== id);
+        localStorage.setItem('musicLibrary', JSON.stringify(newMusic));
+        return newMusic;
+    })
+  }
   
   if (!isLoaded) {
     return null; // Or a loading spinner
   }
 
   return (
-    <MusicContext.Provider value={{ customMusic, addCustomMusic }}>
+    <MusicContext.Provider value={{ musicLibrary, addMusicToLibrary, removeMusic }}>
       {children}
     </MusicContext.Provider>
   );

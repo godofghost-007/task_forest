@@ -116,25 +116,36 @@ const initialTasks: Task[] = [
 ];
 
 export function TaskProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [defaultTasks, setDefaultTasks] = useState<Task[]>([]);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today);
   const { toast } = useToast();
+  const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
     try {
+      const savedTasks = localStorage.getItem('tasks');
       const savedDefaultTasks = localStorage.getItem('defaultTasks');
+      
+      setTasks(savedTasks ? JSON.parse(savedTasks) : initialTasks);
       if (savedDefaultTasks) {
         setDefaultTasks(JSON.parse(savedDefaultTasks));
       }
     } catch (error) {
-      console.error("Failed to parse default tasks from localStorage", error);
+      console.error("Failed to parse tasks from localStorage", error);
+      setTasks(initialTasks);
     }
+    setIsLoaded(true);
   }, []);
 
+  const updateTasks = (newTasks: Task[]) => {
+    setTasks(newTasks);
+    localStorage.setItem('tasks', JSON.stringify(newTasks));
+  }
+
   const addTask = (task: Task) => {
-    setTasks((prevTasks) => [...prevTasks, task]);
+    updateTasks([...tasks, task]);
   };
   
   const addDefaultTask = (task: Task) => {
@@ -144,7 +155,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    updateTasks(tasks.filter((task) => task.id !== taskId));
   };
 
   const closeTaskModal = () => {
@@ -152,16 +163,19 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }
 
   const completeTask = (taskId: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
+    const newTasks = tasks.map((task) =>
         task.id === taskId ? { ...task, completed: true, streak: task.streak + 1 } : task
-      )
-    );
+      );
+    updateTasks(newTasks);
     toast({
         title: "Task Completed!",
         description: "Great job! Your forest is growing thanks to your hard work.",
     });
   };
+  
+  if (!isLoaded) {
+    return null;
+  }
 
   return (
     <TaskContext.Provider value={{ tasks, addTask, deleteTask, completeTask, defaultTasks, addDefaultTask, isTaskModalOpen, setTaskModalOpen, closeTaskModal, selectedDate, setSelectedDate }}>
@@ -177,5 +191,3 @@ export function useTasks() {
   }
   return context;
 }
-
-    

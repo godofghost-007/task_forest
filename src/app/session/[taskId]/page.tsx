@@ -37,7 +37,7 @@ export default function TaskSessionPage() {
   const params = useParams();
   const { tasks, completeTask } = useTasks();
   const { taskSessionBackground } = useBackgrounds();
-  const { customMusic } = useMusic();
+  const { musicLibrary } = useMusic();
   const [task, setTask] = React.useState<Task | null>(null);
 
   // Pomodoro State
@@ -90,9 +90,9 @@ export default function TaskSessionPage() {
         if (currentTask.music.fileDataUrl) {
            setMusicUrl(currentTask.music.fileDataUrl);
         } else if (currentTask.music.id) {
-            const custom = customMusic.find(m => m.id === currentTask.music?.id);
+            const custom = musicLibrary.find(m => m.id === currentTask.music?.id);
             if (custom) {
-                setMusicUrl(custom.dataUrl);
+                setMusicUrl(custom.url);
             } else {
                 setMusicUrl(`/music/${currentTask.music.id}.mp3`);
             }
@@ -102,7 +102,7 @@ export default function TaskSessionPage() {
     } else {
       router.push('/');
     }
-  }, [taskId, tasks, router, customMusic]);
+  }, [taskId, tasks, router, musicLibrary]);
 
   React.useEffect(() => {
     if (task && !task.completed) {
@@ -226,7 +226,7 @@ export default function TaskSessionPage() {
         
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
           
-          <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none -z-10">
              {!taskSessionBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
           </div>
 
@@ -309,5 +309,3 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
-
-    

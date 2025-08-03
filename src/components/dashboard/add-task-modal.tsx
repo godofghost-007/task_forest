@@ -91,10 +91,11 @@ const iconMap: { [key: string]: React.ElementType } = {
 };
 
 import { Label } from '../ui/label';
+import { ScrollArea } from '../ui/scroll-area';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const router = useRouter();
-  const { customMusic, addCustomMusic } = useMusic();
+  const { musicLibrary, addMusicToLibrary } = useMusic();
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(meditationMusic[0].id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,9 +113,9 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
         const newMusic = {
             id: `custom-${Date.now()}`,
             title: file.name,
-            dataUrl: e.target?.result as string
+            url: e.target?.result as string
         };
-        addCustomMusic(newMusic);
+        addMusicToLibrary(newMusic);
         setSelectedMusicId(newMusic.id);
       }
       reader.readAsDataURL(file);
@@ -135,6 +136,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       </div>
       <div className="space-y-2">
         <h4 className="font-semibold text-white/90">Select Music</h4>
+        <ScrollArea className="h-72">
         {meditationMusic.map((music) => (
           <button
             key={music.id}
@@ -151,7 +153,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
             {selectedMusicId === music.id && <Check className="h-5 w-5 text-white" />}
           </button>
         ))}
-        {customMusic.map((music) => (
+        {musicLibrary.map((music) => (
              <button
                 key={music.id}
                 onClick={() => setSelectedMusicId(music.id)}
@@ -181,6 +183,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
                 <p className="font-medium">From your device...</p>
             </button>
         </div>
+        </ScrollArea>
       </div>
       <Button onClick={handleStartSession} className="w-full bg-white text-primary hover:bg-white/90">
         <Play className="h-5 w-5 mr-2" />
@@ -193,7 +196,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
 
 function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask, selectedDate } = useTasks();
-  const { customMusic, addCustomMusic } = useMusic();
+  const { musicLibrary, addMusicToLibrary } = useMusic();
   const [date, setDate] = useState<Date | undefined>(new Date(selectedDate));
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
@@ -207,9 +210,9 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
         if (standardMusic) {
             musicData = standardMusic;
         } else {
-            const custom = customMusic.find(m => m.id === selectedMusicId);
+            const custom = musicLibrary.find(m => m.id === selectedMusicId);
             if (custom) {
-                musicData = { id: custom.id, title: custom.title, duration: 'Custom', fileDataUrl: custom.dataUrl };
+                musicData = { id: custom.id, title: custom.title, duration: 'Custom', fileDataUrl: custom.url };
             }
         }
     }
@@ -240,9 +243,9 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
         const newMusic = {
             id: `custom-${Date.now()}`,
             title: file.name,
-            dataUrl: e.target?.result as string,
+            url: e.target?.result as string,
         };
-        addCustomMusic(newMusic);
+        addMusicToLibrary(newMusic);
         setSelectedMusicId(newMusic.id);
       }
       reader.readAsDataURL(file);
@@ -312,6 +315,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
         </div>
         <div className="space-y-2">
           <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+          <ScrollArea className="h-40">
           {meditationMusic.map((music) => (
             <button
               key={music.id}
@@ -328,7 +332,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
               {selectedMusicId === music.id && <Check className="h-5 w-5 text-white" />}
             </button>
           ))}
-          {customMusic.map((music) => (
+          {musicLibrary.map((music) => (
             <button
               key={music.id}
               onClick={() => setSelectedMusicId(music.id === selectedMusicId ? undefined : music.id)}
@@ -358,6 +362,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 <p className="font-medium">From your device...</p>
               </button>
           </div>
+          </ScrollArea>
         </div>
       </div>
       <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
@@ -371,7 +376,7 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
   const { addTask, addDefaultTask, selectedDate } = useTasks();
-  const { customMusic, addCustomMusic } = useMusic();
+  const { musicLibrary, addMusicToLibrary } = useMusic();
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState(10);
   const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>(undefined);
@@ -387,9 +392,9 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
             if (standardMusic) {
                 musicData = standardMusic;
             } else {
-                const custom = customMusic.find(m => m.id === selectedMusicId);
+                const custom = musicLibrary.find(m => m.id === selectedMusicId);
                 if (custom) {
-                    musicData = { id: custom.id, title: custom.title, duration: 'Custom', fileDataUrl: custom.dataUrl };
+                    musicData = { id: custom.id, title: custom.title, duration: 'Custom', fileDataUrl: custom.url };
                 }
             }
         }
@@ -425,9 +430,9 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         const newMusic = {
             id: `custom-${Date.now()}`,
             title: file.name,
-            dataUrl: e.target?.result as string,
+            url: e.target?.result as string,
         };
-        addCustomMusic(newMusic);
+        addMusicToLibrary(newMusic);
         setSelectedMusicId(newMusic.id);
       }
       reader.readAsDataURL(file);
@@ -493,6 +498,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
       </div>
        <div className="space-y-2">
           <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+          <ScrollArea className="h-40">
           {meditationMusic.map((music) => (
             <button
               key={music.id}
@@ -509,7 +515,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
               {selectedMusicId === music.id && <Check className="h-5 w-5 text-white" />}
             </button>
           ))}
-          {customMusic.map((music) => (
+          {musicLibrary.map((music) => (
             <button
               key={music.id}
               onClick={() => setSelectedMusicId(music.id === selectedMusicId ? undefined : music.id)}
@@ -539,6 +545,7 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
                   <p className="font-medium">From your device...</p>
               </button>
           </div>
+          </ScrollArea>
         </div>
 
       <div className="flex items-center justify-between rounded-lg p-3 bg-white/10">

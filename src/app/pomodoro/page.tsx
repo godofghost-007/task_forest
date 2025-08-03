@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check } from 'lucide-react';
+import { Timer, Pause, Play, RotateCcw, Rewind, FastForward, Music, Settings, X, Coffee, BrainCircuit, Check, Image as ImageIcon } from 'lucide-react';
 import { PlantGrowth } from '@/components/session/plant-growth';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,7 @@ import { useTasks } from '@/context/task-context';
 import { format } from 'date-fns';
 import { useBackgrounds } from '@/context/background-context';
 import { useMusic } from '@/context/music-context';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -40,8 +41,8 @@ export default function PomodoroPage() {
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addTask } = useTasks();
-  const { pomodoroBackground } = useBackgrounds();
-  const { customMusic, addCustomMusic } = useMusic();
+  const { pomodoroBackground, setPomodoroBackground, backgroundLibrary } = useBackgrounds();
+  const { musicLibrary, addMusicToLibrary } = useMusic();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -89,16 +90,16 @@ export default function PomodoroPage() {
             setMusic(standardMusic);
             return;
         }
-        const custom = customMusic.find(m => m.id === selectedMusicId);
+        const custom = musicLibrary.find(m => m.id === selectedMusicId);
         if (custom) {
-            setMusicUrl(custom.dataUrl);
+            setMusicUrl(custom.url);
             setMusic(custom);
             return;
         }
     }
     setMusicUrl(null);
     setMusic(null);
-  }, [selectedMusicId, customMusic]);
+  }, [selectedMusicId, musicLibrary]);
 
   React.useEffect(() => {
     setTimeLeft(durations[sessionType]);
@@ -188,9 +189,9 @@ export default function PomodoroPage() {
         const newMusic = {
             id: `custom-${Date.now()}`,
             title: file.name,
-            dataUrl: e.target?.result as string,
+            url: e.target?.result as string,
         };
-        addCustomMusic(newMusic);
+        addMusicToLibrary(newMusic);
         setSelectedMusicId(newMusic.id);
       }
       reader.readAsDataURL(file);
@@ -249,6 +250,38 @@ export default function PomodoroPage() {
       <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-white">
         
         <div className="absolute top-4 right-4 flex gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
+                        <ImageIcon className="h-6 w-6"/>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-background/80 backdrop-blur-md border-white/20 text-foreground">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Change Background</h4>
+                        <p className="text-sm text-muted-foreground">Select a background from your library.</p>
+                    </div>
+                    <ScrollArea className="h-60 mt-4">
+                        <div className="grid grid-cols-2 gap-2 pr-2">
+                             <button onClick={() => setPomodoroBackground(null)} className="aspect-video w-full rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground hover:border-primary hover:text-primary">
+                                Use Default
+                            </button>
+                            {backgroundLibrary.map(bg => (
+                                <button key={bg.id} onClick={() => setPomodoroBackground(bg)} className="relative aspect-video w-full rounded-md overflow-hidden group">
+                                    {bg.type === 'image' ? (
+                                        <img src={bg.url} alt="background" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <video src={bg.url} muted loop className="w-full h-full object-cover" />
+                                    )}
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                                        <Check className="h-8 w-8 text-white"/>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </PopoverContent>
+            </Popover>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50">
@@ -326,7 +359,7 @@ export default function PomodoroPage() {
                                 Choose some background audio.
                             </p>
                         </div>
-                        <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
+                        <ScrollArea className="max-h-60 overflow-y-auto space-y-1 pr-2">
                             <button
                                 onClick={() => setSelectedMusicId(null)}
                                 className={cn("w-full text-left p-2 rounded-md text-sm", !selectedMusicId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent/50')}
@@ -342,7 +375,7 @@ export default function PomodoroPage() {
                                     {m.title}
                                 </button>
                             ))}
-                            {customMusic.map((m) => (
+                            {musicLibrary.map((m) => (
                                 <button
                                     key={m.id}
                                     onClick={() => setSelectedMusicId(m.id)}
@@ -366,13 +399,13 @@ export default function PomodoroPage() {
                                     <p>From your device...</p>
                                 </button>
                             </div>
-                        </div>
+                        </ScrollArea>
                     </div>
                 </PopoverContent>
             </Popover>
         </div>
         
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none -z-10">
            {!pomodoroBackground && <PlantGrowth progress={sessionType === 'work' ? progress : 0} />}
         </div>
 
