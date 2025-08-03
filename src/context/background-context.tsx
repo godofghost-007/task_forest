@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 type Background = {
@@ -20,7 +20,7 @@ interface BackgroundContextType {
   backgroundLibrary: Background[];
   setPomodoroBackground: (background: Background | null) => void;
   setTaskSessionBackground: (background: Background | null) => void;
-  addBackgroundToLibrary: (background: Pick<Background, 'type' | 'title'> & { dataUrl: string }) => Promise<void>;
+  addBackgroundToLibrary: (background: Pick<Background, 'type' | 'title'> & { file: File }) => Promise<void>;
   removeBackground: (background: Background) => Promise<void>;
   isUploading: boolean;
 }
@@ -75,7 +75,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { dataUrl: string }) => {
+  const addBackgroundToLibrary = async (background: Pick<Background, 'type' | 'title'> & { file: File }) => {
     setIsUploading(true);
     try {
         const id = `bg-${Date.now()}`;
@@ -83,7 +83,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
         const storagePath = `backgrounds/${id}.${fileExtension}`;
         const storageRef = ref(storage, storagePath);
 
-        await uploadString(storageRef, background.dataUrl, 'data_url');
+        await uploadBytes(storageRef, background.file);
         const downloadUrl = await getDownloadURL(storageRef);
 
         const newBackground: Background = {

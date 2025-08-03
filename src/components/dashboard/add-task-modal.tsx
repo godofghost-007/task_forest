@@ -109,17 +109,13 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        addMusicToLibrary({
-            title: file.name,
-            dataUrl: e.target?.result as string
-        }).then(() => {
-            // This is tricky because we don't get the new ID back directly.
-            // For now, we won't auto-select it, user can select from library.
-        });
-      }
-      reader.readAsDataURL(file);
+      addMusicToLibrary({
+          title: file.name,
+          file: file
+      }).then(() => {
+          // This is tricky because we don't get the new ID back directly.
+          // For now, we won't auto-select it, user can select from library.
+      });
     }
   };
   
@@ -244,14 +240,10 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        addMusicToLibrary({
-            title: file.name,
-            dataUrl: e.target?.result as string,
-        });
-      }
-      reader.readAsDataURL(file);
+      addMusicToLibrary({
+          title: file.name,
+          file: file,
+      });
     }
   };
 
@@ -433,14 +425,10 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        addMusicToLibrary({
-            title: file.name,
-            dataUrl: e.target?.result as string,
-        });
-      }
-      reader.readAsDataURL(file);
+      addMusicToLibrary({
+          title: file.name,
+          file: file,
+      });
     }
   };
 

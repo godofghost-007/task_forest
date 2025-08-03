@@ -63,29 +63,21 @@ export default function ProfilePage() {
   const handleBgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
         const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            addBackgroundToLibrary({
-                type: file.type.startsWith('video') ? 'video' : 'image',
-                title: file.name,
-                dataUrl: e.target?.result as string,
-            });
-        };
-        reader.readAsDataURL(file);
+        addBackgroundToLibrary({
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            title: file.name,
+            file: file,
+        });
     }
   };
 
   const handleMusicFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        addMusicToLibrary({
-          title: file.name,
-          dataUrl: e.target?.result as string,
-        });
-      };
-      reader.readAsDataURL(file);
+      addMusicToLibrary({
+        title: file.name,
+        file: file,
+      });
     }
   };
 

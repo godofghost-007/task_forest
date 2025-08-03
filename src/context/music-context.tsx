@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 export type MusicFile = {
@@ -15,7 +15,7 @@ export type MusicFile = {
 
 interface MusicContextType {
   musicLibrary: MusicFile[];
-  addMusicToLibrary: (music: { title: string, dataUrl: string }) => Promise<void>;
+  addMusicToLibrary: (music: { title: string, file: File }) => Promise<void>;
   removeMusic: (musicFile: MusicFile) => Promise<void>;
   isUploading: boolean;
 }
@@ -45,7 +45,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('musicLibrary', JSON.stringify(newLibrary));
   };
 
-  const addMusicToLibrary = async (music: { title: string, dataUrl: string }) => {
+  const addMusicToLibrary = async (music: { title: string, file: File }) => {
     setIsUploading(true);
     try {
         const id = `music-${Date.now()}`;
@@ -53,7 +53,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         const storagePath = `music/${id}.${fileExtension}`;
         const storageRef = ref(storage, storagePath);
 
-        await uploadString(storageRef, music.dataUrl, 'data_url');
+        await uploadBytes(storageRef, music.file);
         const downloadUrl = await getDownloadURL(storageRef);
         
         const newMusicFile: MusicFile = {
