@@ -87,22 +87,26 @@ import { Label } from '../ui/label';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
   const { addTask } = useTasks();
-  const [selectedMusic, setSelectedMusic] = useState(meditationMusic[0]);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(meditationMusic[0]);
   const [localFileName, setLocalFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const handleAddTask = () => {
-    const subtitle = localFileName || selectedMusic.title;
+    let musicData = selectedMusic;
+    if (localFileName) {
+      musicData = { title: localFileName, duration: 'Custom' };
+    }
+    
     addTask({
       id: Date.now().toString(),
       title: (task.title || 'Mindful Minutes').toUpperCase(),
-      subtitle: subtitle,
+      subtitle: musicData ? musicData.title : 'No music',
       icon: task.icon || 'Heart',
       streak: 0,
       completed: false,
       showPlay: true,
-      music: localFileName ? { title: localFileName, duration: 'Custom' } : selectedMusic
+      music: musicData,
     });
     onClose();
   };
@@ -110,7 +114,7 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setLocalFileName(event.target.files[0].name);
-      setSelectedMusic({ id: 'local', title: '', duration: ''});
+      setSelectedMusic(undefined);
     }
   };
   
@@ -137,14 +141,14 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
             }}
             className={cn(
               "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
-              selectedMusic.id === music.id ? "bg-white/30" : "hover:bg-white/10"
+              selectedMusic?.id === music.id ? "bg-white/30" : "hover:bg-white/10"
             )}
           >
             <div>
               <p className="font-medium">{music.title}</p>
               <p className="text-sm text-white/70">{music.duration}</p>
             </div>
-            {selectedMusic.id === music.id && <Check className="h-5 w-5 text-white" />}
+            {selectedMusic?.id === music.id && <Check className="h-5 w-5 text-white" />}
           </button>
         ))}
          <div>
@@ -183,8 +187,15 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
   const { addTask } = useTasks();
   const [time, setTime] = useState(task.time || '10:00');
   const [duration, setDuration] = useState(task.duration || 30);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
+  const [localFileName, setLocalFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddTask = () => {
+    let musicData = selectedMusic;
+    if (localFileName) {
+      musicData = { title: localFileName, duration: 'Custom' };
+    }
     addTask({
       id: Date.now().toString(),
       title: (task.title || 'New Task').toUpperCase(),
@@ -194,11 +205,24 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
       completed: false,
       time: time,
       duration: duration,
+      music: musicData,
+      showPlay: !!musicData
     });
     onClose();
   };
   
   const Icon = task.icon && iconMap[task.icon as string] ? iconMap[task.icon as string] : Pencil;
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setLocalFileName(event.target.files[0].name);
+      setSelectedMusic(undefined);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -232,6 +256,50 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
                 className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
             />
         </div>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+          {meditationMusic.map((music) => (
+            <button
+              key={music.id}
+              onClick={() => {
+                setSelectedMusic(music.id === selectedMusic?.id ? undefined : music)
+                setLocalFileName(null);
+              }}
+              className={cn(
+                "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
+                selectedMusic?.id === music.id ? "bg-white/30" : "hover:bg-white/10"
+              )}
+            >
+              <div>
+                <p className="font-medium">{music.title}</p>
+                <p className="text-sm text-white/70">{music.duration}</p>
+              </div>
+              {selectedMusic?.id === music.id && <Check className="h-5 w-5 text-white" />}
+            </button>
+          ))}
+           <div>
+              <input 
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="audio/mp3,audio/*"
+              />
+              <button
+                  onClick={handleUploadClick}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
+                    localFileName ? "bg-white/30" : "hover:bg-white/10"
+                  )}
+              >
+                  <div>
+                      <p className="font-medium">From your device</p>
+                      {localFileName && <p className="text-sm text-white/70 truncate max-w-xs">{localFileName}</p>}
+                  </div>
+                  {localFileName && <Check className="h-5 w-5 text-white" />}
+              </button>
+          </div>
+        </div>
       </div>
       <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
           <Plus className="h-5 w-5 mr-2" />
@@ -245,21 +313,44 @@ function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: (
 function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
   const [title, setTitle] = useState('');
   const { addTask } = useTasks();
+  const [duration, setDuration] = useState(10);
+  const [selectedMusic, setSelectedMusic] = useState<Task['music']>(undefined);
+  const [localFileName, setLocalFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddTask = () => {
     if (title.trim()) {
+      let musicData = selectedMusic;
+      if (localFileName) {
+        musicData = { title: localFileName, duration: 'Custom' };
+      }
       addTask({
         id: Date.now().toString(),
         title: title.toUpperCase(),
-        subtitle: 'Daily',
+        subtitle: `${duration} min`,
         icon: 'Pencil',
         streak: 0,
         completed: false,
+        duration: duration,
+        music: musicData,
+        showPlay: !!musicData
       });
       setTitle('');
       onClose();
     }
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setLocalFileName(event.target.files[0].name);
+      setSelectedMusic(undefined);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
+
 
   return (
     <div className="p-6 space-y-6">
@@ -278,6 +369,61 @@ function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () =
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
+      <div>
+        <Label htmlFor="duration" className="text-white/80">Duration (minutes)</Label>
+        <Input 
+            id="duration"
+            type="number"
+            value={duration}
+            onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+            className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
+        />
+      </div>
+       <div className="space-y-2">
+          <h4 className="font-semibold text-white/90">Select Music (Optional)</h4>
+          {meditationMusic.map((music) => (
+            <button
+              key={music.id}
+              onClick={() => {
+                setSelectedMusic(music.id === selectedMusic?.id ? undefined : music)
+                setLocalFileName(null);
+              }}
+              className={cn(
+                "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
+                selectedMusic?.id === music.id ? "bg-white/30" : "hover:bg-white/10"
+              )}
+            >
+              <div>
+                <p className="font-medium">{music.title}</p>
+                <p className="text-sm text-white/70">{music.duration}</p>
+              </div>
+              {selectedMusic?.id === music.id && <Check className="h-5 w-5 text-white" />}
+            </button>
+          ))}
+           <div>
+              <input 
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="audio/mp3,audio/*"
+              />
+              <button
+                  onClick={handleUploadClick}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors",
+                    localFileName ? "bg-white/30" : "hover:bg-white/10"
+                  )}
+              >
+                  <div>
+                      <p className="font-medium">From your device</p>
+                      {localFileName && <p className="text-sm text-white/70 truncate max-w-xs">{localFileName}</p>}
+                  </div>
+                  {localFileName && <Check className="h-5 w-5 text-white" />}
+              </button>
+          </div>
+        </div>
+
       <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
           <Plus className="h-5 w-5 mr-2" />
           Add Custom Task
@@ -297,15 +443,12 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
       return;
     }
     
-    addTask({
-      id: Date.now().toString(),
-      title: task.name.toUpperCase(),
-      subtitle: 'Health Task',
+    // For simple tasks without details, go to details view with defaults
+    onDetailsClick({
+      title: task.name,
       icon: iconName,
-      streak: 0,
-      completed: false,
+      duration: 10,
     });
-    closeTaskModal();
   }
 
   return (
@@ -347,7 +490,7 @@ function DefaultView({ onCustomClick, onDetailsClick, onMusicClick }: { onCustom
                     if (name === 'Mindful Minutes') {
                         onMusicClick({ title: name, icon: iconName });
                     } else {
-                        onDetailsClick({ title: name, icon: iconName });
+                        onDetailsClick({ title: name, icon: iconName, duration: 10 });
                     }
                   }}>
                     <ChevronRight className="h-5 w-5" />

@@ -15,7 +15,7 @@ export interface Task {
   time?: string;
   duration?: number;
   music?: {
-    id: string;
+    id?: string;
     title: string;
     duration: string;
   };
@@ -101,14 +101,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isTaskModalOpen, setTaskModalOpen] = useState(false);
 
-  const addTask = (task: Omit<Task, 'id' | 'completed' | 'streak'>) => {
-    const newTask: Task = {
-      ...task,
-      id: Date.now().toString(),
-      completed: false,
-      streak: 0,
-    };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
+  const addTask = (task: Task) => {
+    setTasks((prevTasks) => [...prevTasks, task]);
   };
 
   const closeTaskModal = () => {

@@ -38,7 +38,11 @@ export function TaskItem({
   
   const displaySubtitle = () => {
     if (music) {
-      return `${music.title} - ${music.duration}`;
+      let musicInfo = music.title;
+      if (music.duration !== 'Custom') {
+        musicInfo += ` - ${music.duration}`;
+      }
+      return musicInfo;
     }
     if (time) {
       return `${time} - ${subtitle}`;
@@ -68,7 +72,7 @@ export function TaskItem({
             {streak}
           </div>
         )}
-        {showPlay && !completed && (
+        {(showPlay || music) && !completed && (
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
             { music ? <Music className="h-10 w-10 text-white" /> : <Play className="h-10 w-10 text-white" fill="white" />}
           </div>
