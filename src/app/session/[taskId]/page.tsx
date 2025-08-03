@@ -158,11 +158,12 @@ export default function TaskSessionPage() {
       
       <div className="relative z-10 flex h-full flex-col items-center justify-between p-4 text-white">
         
-        <div />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
+           <PlantGrowth progress={progress} />
+        </div>
 
-        <PlantGrowth progress={progress} />
 
-        <Card className="w-full max-w-md bg-black/30 text-white backdrop-blur-sm border-white/20">
+        <Card className="w-full max-w-md bg-black/30 text-white backdrop-blur-sm border-white/20 self-end">
           <CardContent className="p-6 text-center">
             <h1 className="font-headline text-2xl font-bold uppercase tracking-wider">{task.title}</h1>
             <p className="text-white/80">{task.subtitle}</p>
