@@ -94,7 +94,7 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
             path: storagePath,
         };
         
-        updateLibrary([...backgroundLibrary, newBackground]);
+        updateLibrary([newBackground, ...backgroundLibrary]);
 
         if (andApply) {
             setPomodoroBackground(newBackground);
