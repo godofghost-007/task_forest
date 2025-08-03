@@ -10,12 +10,29 @@ import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle, Leaf, Zap, User, Settings, Bell, Palette } from 'lucide-react';
 import { NotificationsDialog } from '@/components/profile/notifications-dialog';
 import { ThemeDialog } from '@/components/profile/theme-dialog';
+import { EditProfileDialog } from '@/components/profile/edit-profile-dialog';
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  mobile: string;
+  hobbies: string;
+  avatarUrl: string;
+}
 
 export default function ProfilePage() {
   const { tasks } = useTasks();
   const [notificationSettings, setNotificationSettings] = useState({
     reminders: true,
     autoComplete: false,
+  });
+
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: 'Alex Doe',
+    email: 'alex.doe@example.com',
+    mobile: '123-456-7890',
+    hobbies: 'Reading, hiking, coding',
+    avatarUrl: 'https://placehold.co/100x100.png',
   });
 
   const completedTasks = tasks.filter(task => task.completed);
@@ -32,15 +49,17 @@ export default function ProfilePage() {
         <Card>
           <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" data-ai-hint="person avatar" />
+              <AvatarImage src={userProfile.avatarUrl} alt="User Avatar" data-ai-hint="person avatar" />
               <AvatarFallback>
                 <User className="h-10 w-10" />
               </AvatarFallback>
             </Avatar>
             <div className="text-center sm:text-left">
-              <h1 className="font-headline text-3xl font-bold">Alex Doe</h1>
-              <p className="text-muted-foreground">alex.doe@example.com</p>
-              <Button variant="outline" size="sm" className="mt-2">Edit Profile</Button>
+              <h1 className="font-headline text-3xl font-bold">{userProfile.name}</h1>
+              <p className="text-muted-foreground">{userProfile.email}</p>
+              <EditProfileDialog userProfile={userProfile} onSave={setUserProfile}>
+                <Button variant="outline" size="sm" className="mt-2">Edit Profile</Button>
+              </EditProfileDialog>
             </div>
           </CardContent>
         </Card>
