@@ -39,6 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
+import { useRouter } from 'next/navigation';
 
 
 const healthTasks = [
@@ -64,7 +65,7 @@ const healthTasks = [
   { icon: Dumbbell, name: 'Exercise Minutes', indicator: 'green' },
 ];
 
-const meditationMusic = [
+export const meditationMusic = [
     { id: '1', title: 'Quiet Forest', duration: '10:00' },
     { id: '2', title: 'Gentle Stream', duration: '15:00' },
     { id: '3', title: 'Morning Birds', duration: '5:00' },
@@ -90,13 +91,13 @@ const iconMap: { [key: string]: React.ElementType } = {
 import { Label } from '../ui/label';
 
 function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
-  const { addTask, selectedDate } = useTasks();
+  const router = useRouter();
   const [selectedMusic, setSelectedMusic] = useState<Task['music']>(meditationMusic[0]);
   const [localFile, setLocalFile] = useState<{name: string, dataUrl: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
-  const handleAddTask = () => {
+  const handleStartSession = () => {
     let musicData: Task['music'] | undefined = selectedMusic;
     if (localFile) {
       musicData = { 
@@ -107,18 +108,17 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
       };
     }
     
-    addTask({
-      id: Date.now().toString(),
-      title: (task.title || 'Mindful Minutes').toUpperCase(),
-      subtitle: musicData ? musicData.title : 'No music',
-      icon: task.icon || 'Heart',
-      streak: 0,
-      completed: false,
-      showPlay: true,
-      music: musicData,
-      duration: parseInt(musicData?.duration || '10', 10), // Default duration
-      date: selectedDate,
+    const query = new URLSearchParams({
+        title: (task.title || 'Mindful Minutes').toUpperCase(),
+        subtitle: musicData ? musicData.title : 'No music',
+        icon: task.icon || 'Heart',
+        duration: parseInt(musicData?.duration || '10', 10).toString(),
+        ...(musicData?.id && { musicId: musicData.id }),
+        ...(musicData?.fileDataUrl && { musicDataUrl: musicData.fileDataUrl }),
+        ...(musicData?.title && { musicTitle: musicData.title }),
     });
+
+    router.push(`/session/quick?${query.toString()}`);
     onClose();
   };
   
@@ -190,9 +190,9 @@ function MusicSelectionView({ task, onBack, onClose }: { task: Partial<Task>, on
             </button>
         </div>
       </div>
-      <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
-        <Plus className="h-5 w-5 mr-2" />
-        Add Task
+      <Button onClick={handleStartSession} className="w-full bg-white text-primary hover:bg-white/90">
+        <Play className="h-5 w-5 mr-2" />
+        Start Session
       </Button>
     </div>
   );
@@ -707,3 +707,5 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
+
+    
