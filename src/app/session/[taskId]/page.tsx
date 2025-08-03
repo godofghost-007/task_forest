@@ -19,6 +19,15 @@ function formatTime(seconds: number) {
 
 type SessionType = 'work' | 'shortBreak' | 'longBreak';
 
+const backgrounds = [
+    { url: 'https://placehold.co/1920x1080/2c3e50/ffffff.png', hint: 'rainy night city' },
+    { url: 'https://placehold.co/1920x1080/34495e/ffffff.png', hint: 'cozy coffee shop' },
+    { url: 'https://placehold.co/1920x1080/8e44ad/ffffff.png', hint: 'lofi study room' },
+    { url: 'https://placehold.co/1920x1080/2980b9/ffffff.png', hint: 'peaceful ocean' },
+    { url: 'https://placehold.co/1920x1080/16a085/ffffff.png', hint: 'serene forest' },
+    { url: 'https://placehold.co/1920x1080/a2d2ff/a2d2ff.png', hint: 'calm mountain scenery' }
+];
+
 export default function TaskSessionPage() {
   const router = useRouter();
   const params = useParams();
@@ -39,6 +48,12 @@ export default function TaskSessionPage() {
 
   const taskId = params.taskId as string;
   
+  const [background, setBackground] = React.useState({ url: '', hint: ''});
+
+  React.useEffect(() => {
+    setBackground(backgrounds[Math.floor(Math.random() * backgrounds.length)]);
+  }, []);
+
   const durations = React.useMemo(() => {
     const workDuration = task?.duration || 25;
     return {
@@ -168,8 +183,8 @@ export default function TaskSessionPage() {
       <div className="relative h-dvh w-full">
         <div 
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://placehold.co/1920x1080/a2d2ff/a2d2ff.png')", filter: 'blur(4px)' }}
-          data-ai-hint="calm mountain scenery"
+          style={{ backgroundImage: `url('${background.url}')`, filter: 'blur(4px)' }}
+          data-ai-hint={background.hint}
         />
         <div className="absolute inset-0 bg-black/50" />
         

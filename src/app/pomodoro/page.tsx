@@ -25,6 +25,15 @@ function formatTime(seconds: number) {
 
 type SessionType = 'work' | 'shortBreak' | 'longBreak';
 
+const backgrounds = [
+    { url: 'https://placehold.co/1920x1080/2c3e50/ffffff.png', hint: 'rainy night city' },
+    { url: 'https://placehold.co/1920x1080/34495e/ffffff.png', hint: 'cozy coffee shop' },
+    { url: 'https://placehold.co/1920x1080/8e44ad/ffffff.png', hint: 'lofi study room' },
+    { url: 'https://placehold.co/1920x1080/2980b9/ffffff.png', hint: 'peaceful ocean' },
+    { url: 'https://placehold.co/1920x1080/16a085/ffffff.png', hint: 'serene forest' },
+    { url: 'https://placehold.co/1920x1080/a2d2ff/a2d2ff.png', hint: 'calm mountain scenery' }
+];
+
 export default function PomodoroPage() {
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -50,6 +59,12 @@ export default function PomodoroPage() {
   });
   const [tempLongBreakInterval, setTempLongBreakInterval] = React.useState(4);
 
+  // Background state
+  const [background, setBackground] = React.useState({ url: '', hint: ''});
+
+  React.useEffect(() => {
+    setBackground(backgrounds[Math.floor(Math.random() * backgrounds.length)]);
+  }, []);
 
   // Music State
   const [music, setMusic] = React.useState<any | null>(null);
@@ -198,10 +213,10 @@ export default function PomodoroPage() {
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
         style={{ 
-            backgroundImage: "url('https://placehold.co/1920x1080/a2d2ff/a2d2ff.png')", 
+            backgroundImage: `url('${background.url}')`, 
             filter: `blur(8px) ${sessionType !== 'work' ? 'grayscale(80%)' : ''}`
         }}
-        data-ai-hint="calm mountain scenery"
+        data-ai-hint={background.hint}
       />
       <div className={cn(
           "absolute inset-0 transition-colors duration-1000",
@@ -400,3 +415,5 @@ export default function PomodoroPage() {
     </AppLayout>
   );
 }
+
+    
