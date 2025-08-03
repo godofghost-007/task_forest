@@ -94,7 +94,7 @@ const initialTasks: Task[] = [
   },
   {
     id: '5',
-    icon: 'RunIcon',
+    icon: 'Footprints',
     title: 'RUN 10 MILES',
     streak: 6,
     subtitle: 'Weekly*',

@@ -13,6 +13,7 @@ import {
   Settings,
   Star,
   Timer,
+  Users,
 } from 'lucide-react';
 
 import {
@@ -35,6 +36,7 @@ const navItems = [
   { href: '/pomodoro', icon: Timer, label: 'Pomodoro' },
   { href: '/progress', icon: TrendingUp, label: 'Progress' },
   { href: '/forest', icon: Trees, label: 'Forest' },
+  { href: '/social', icon: Users, label: 'Social' },
   { href: '/profile', icon: UserCircle, label: 'Profile' },
 ];
 

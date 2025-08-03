@@ -1,9 +1,8 @@
 
 'use client';
-import { Check, Heart, HelpCircle, Play, Music, Trash2, Timer } from 'lucide-react';
+import { Check, Heart, HelpCircle, Play, Music, Trash2, Timer, Footprints } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
-import { RunIcon } from '@/components/icons/run-icon';
 import { useMemo } from 'react';
 import type { Task } from '@/context/task-context';
 import { useTasks } from '@/context/task-context';
@@ -44,8 +43,8 @@ export function TaskItem({
   const { deleteTask } = useTasks();
 
   const Icon = useMemo(() => {
-    if (icon === 'RunIcon') {
-      return RunIcon;
+    if (icon === 'RunIcon' || icon === 'Footprints') {
+      return Footprints;
     }
     if (isLucideIcon(icon)) {
       return Icons[icon];
