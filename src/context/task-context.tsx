@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -34,24 +35,26 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 const initialTasks: Task[] = [
   {
     id: '1',
-    icon: 'Scissors',
+    icon: 'Pencil',
     title: 'WRITE JOURNAL',
     streak: 2,
     subtitle: 'Daily',
     completed: false,
+    duration: 5,
   },
   {
     id: '2',
-    icon: 'PenTool',
+    icon: 'Dumbbell',
     title: 'MOBILISE',
     streak: 4,
-    subtitle: '10:00',
+    subtitle: '10 min',
     completed: false,
     time: '10:00',
+    duration: 10,
   },
   {
     id: '3',
-    icon: 'Leaf',
+    icon: 'Heart',
     title: 'MEDITATE',
     streak: 0,
     subtitle: '15 min',
@@ -59,6 +62,11 @@ const initialTasks: Task[] = [
     completed: false,
     time: '09:00',
     duration: 15,
+    music: {
+      id: '2',
+      title: 'Gentle Stream',
+      duration: '15:00',
+    }
   },
   {
     id: '4',
@@ -67,6 +75,7 @@ const initialTasks: Task[] = [
     streak: 3,
     subtitle: 'Daily*',
     completed: false,
+    duration: 25,
   },
   {
     id: '5',
@@ -75,6 +84,7 @@ const initialTasks: Task[] = [
     streak: 6,
     subtitle: 'Weekly*',
     completed: false,
+    duration: 60,
   },
   {
     id: '6',
@@ -83,6 +93,7 @@ const initialTasks: Task[] = [
     streak: 4,
     subtitle: 'Daily*',
     completed: false,
+    duration: 1,
   },
 ];
 
@@ -107,7 +118,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const completeTask = (taskId: string) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed, streak: task.completed ? task.streak -1 : task.streak + 1 } : task
+        task.id === taskId ? { ...task, completed: true, streak: task.streak + 1 } : task
       )
     );
   };

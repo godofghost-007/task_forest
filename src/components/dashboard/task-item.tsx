@@ -1,3 +1,4 @@
+
 'use client';
 import { Check, Heart, HelpCircle, Play, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,6 @@ function isLucideIcon(key: string): key is keyof typeof Icons {
 }
 
 interface TaskItemProps extends Task {
-  onComplete: () => void;
 }
 
 export function TaskItem({
@@ -23,7 +23,6 @@ export function TaskItem({
   streak,
   showPlay,
   completed,
-  onComplete,
   time,
   music
 }: TaskItemProps) {
@@ -50,7 +49,6 @@ export function TaskItem({
   return (
     <div
       className="group flex cursor-pointer flex-col items-center gap-3 transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
-      onClick={onComplete}
     >
       <div
         className={cn(

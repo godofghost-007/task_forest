@@ -1,9 +1,11 @@
+
 'use client';
 import { useTasks } from '@/context/task-context';
 import { TaskItem } from './task-item';
+import Link from 'next/link';
 
 export function TaskGrid() {
-  const { tasks, completeTask } = useTasks();
+  const { tasks } = useTasks();
 
   if (tasks.length === 0) {
     return (
@@ -19,11 +21,11 @@ export function TaskGrid() {
   return (
     <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
       {tasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          {...task}
-          onComplete={() => completeTask(task.id)}
-        />
+        <Link key={task.id} href={`/session/${task.id}`} className="no-underline">
+          <TaskItem
+            {...task}
+          />
+        </Link>
       ))}
     </div>
   );
