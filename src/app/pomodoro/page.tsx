@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { meditationMusic } from '@/components/dashboard/add-task-modal';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/context/task-context';
 import { AppLayout } from '@/components/layout/app-layout';
+import { useTasks } from '@/context/task-context';
+import { format } from 'date-fns';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -27,6 +28,7 @@ type SessionType = 'work' | 'shortBreak' | 'longBreak';
 export default function PomodoroPage() {
   const router = useRouter();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { addTask } = useTasks();
 
   // Pomodoro State
   const [durations, setDurations] = React.useState({
@@ -47,7 +49,7 @@ export default function PomodoroPage() {
   });
 
   // Music State
-  const [music, setMusic] = React.useState<Task['music'] | null>(null);
+  const [music, setMusic] = React.useState<any | null>(null);
   const [musicUrl, setMusicUrl] = React.useState<string | null>(null);
   const [localFile, setLocalFile] = React.useState<{name: string, dataUrl: string} | null>(null);
   const audioRef = React.useRef<HTMLAudioElement>(null);
@@ -85,6 +87,18 @@ export default function PomodoroPage() {
       if (sessionType === 'work') {
         const newPomodoroCount = pomodoroCount + 1;
         setPomodoroCount(newPomodoroCount);
+        
+        // Add a completed Pomodoro task to the context to grow the forest
+        addTask({
+            id: `pomodoro-${Date.now()}`,
+            title: 'Pomodoro Session',
+            subtitle: `${durations.work / 60} min focus`,
+            icon: 'Timer',
+            completed: true,
+            streak: 1, // Each Pomodoro contributes a "streak" of 1
+            date: format(new Date(), 'yyyy-MM-dd'),
+        });
+
         const nextSession: SessionType = newPomodoroCount % 4 === 0 ? 'longBreak' : 'shortBreak';
         setSessionType(nextSession);
       } else { // Break finished
@@ -92,7 +106,7 @@ export default function PomodoroPage() {
       }
     }
     return () => clearInterval(timerId);
-  }, [isActive, timeLeft, sessionType, pomodoroCount]);
+  }, [isActive, timeLeft, sessionType, pomodoroCount, durations, addTask]);
 
   React.useEffect(() => {
     if (audioRef.current) {

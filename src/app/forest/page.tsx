@@ -25,7 +25,7 @@ export default function ForestPage() {
 
           <Card className="overflow-hidden shadow-lg bg-green-100/50 dark:bg-green-900/20">
             <CardContent className="p-2 sm:p-4">
-              <ForestGrid completedTasksCount={completedTasks.length} />
+              <ForestGrid completedTasks={completedTasks} />
             </CardContent>
           </Card>
 
