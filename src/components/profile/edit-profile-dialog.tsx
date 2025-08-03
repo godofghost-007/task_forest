@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { mockUsers } from '@/app/social/page'; // Import mock users for validation
 
 
 const profileSchema = z.object({
@@ -55,6 +56,7 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
     handleSubmit,
     setValue,
     watch,
+    setError,
     formState: { errors },
   } = useForm<UserProfile>({
     resolver: zodResolver(profileSchema),
@@ -90,6 +92,20 @@ export function EditProfileDialog({ children, userProfile, onSave }: EditProfile
   };
   
   const onSubmit = (data: UserProfile) => {
+    // In a real app, you would get the current user's ID to exclude it from the check.
+    // For now, we check against all mock users.
+    const isUsernameTaken = mockUsers.some(
+        (user) => user.username === data.username && user.email !== userProfile.email
+    );
+
+    if (isUsernameTaken) {
+        setError('username', {
+            type: 'manual',
+            message: 'This username is already taken. Please choose another.',
+        });
+        return;
+    }
+
     onSave(data);
     setOpen(false);
   };
