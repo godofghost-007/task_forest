@@ -98,6 +98,15 @@ export default function TaskSessionPage() {
   }, [taskId, tasks, router]);
 
   React.useEffect(() => {
+    if (task && !task.completed) {
+      setIsActive(true);
+      if (task.music) {
+        setIsAudioPlaying(true);
+      }
+    }
+  }, [task]);
+
+  React.useEffect(() => {
     let timerId: NodeJS.Timeout | undefined;
     
     if (isActive && timeLeft > 0) {
@@ -133,7 +142,7 @@ export default function TaskSessionPage() {
             audioRef.current.pause();
         }
     }
-  }, [isAudioPlaying, isSessionCompleted]);
+  }, [isAudioPlaying, isSessionCompleted, musicUrl]);
 
 
   const handleCompleteTask = () => {
@@ -293,3 +302,5 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
+
+    
