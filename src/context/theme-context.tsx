@@ -14,41 +14,36 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState('Default');
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('task-forest-theme') || 'Default';
-    setTheme(savedTheme);
-  }, []);
-
-  const setTheme = (themeName: string) => {
+  const applyTheme = (themeName: string) => {
     const root = window.document.documentElement;
     const selectedTheme = themes.find(t => t.name === themeName);
-    
+
     if (!selectedTheme) return;
 
-    // Remove all theme classes
+    // Remove all possible theme classes first.
     themes.forEach(t => {
       if (t.className) {
         root.classList.remove(t.className);
       }
     });
-    
-    // Add the new theme class if it's not the default
+
+    // Add the new theme class if it's not the default.
     if (selectedTheme.className && selectedTheme.className !== 'theme-default') {
-        root.classList.add(selectedTheme.className);
+      root.classList.add(selectedTheme.className);
     }
     
     setThemeState(themeName);
     localStorage.setItem('task-forest-theme', themeName);
   };
   
-  // On initial load, apply the theme from state
+  // On initial load, get theme from local storage and apply it.
   useEffect(() => {
-    const currentTheme = localStorage.getItem('task-forest-theme') || 'Default';
-    setTheme(currentTheme);
+    const savedTheme = localStorage.getItem('task-forest-theme') || 'Default';
+    applyTheme(savedTheme);
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme: applyTheme }}>
       {children}
     </ThemeContext.Provider>
   );
