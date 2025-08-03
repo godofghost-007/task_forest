@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTasks } from '@/context/task-context';
+import type { Task } from '@/context/task-context';
 
 const actionIcons = [
   { icon: Check, label: 'Completion' },
@@ -78,9 +79,72 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 import * as Icons from 'lucide-react';
 import { RunIcon } from '@/components/icons/run-icon';
+import { Label } from '../ui/label';
+
+function DetailsView({ task, onBack, onClose }: { task: Partial<Task>, onBack: () => void, onClose: () => void }) {
+  const { addTask } = useTasks();
+  const [time, setTime] = useState(task.time || '10:00');
+  const [duration, setDuration] = useState(task.duration || 30);
+
+  const handleAddTask = () => {
+    addTask({
+      id: Date.now().toString(),
+      title: (task.title || 'New Task').toUpperCase(),
+      subtitle: `${duration} min`,
+      icon: task.icon || 'Pencil',
+      streak: 0,
+      completed: false,
+      time: time,
+      duration: duration,
+    });
+    onClose();
+  };
+  
+  const Icon = task.icon && iconMap[task.icon] ? iconMap[task.icon] : Pencil;
+
+  return (
+    <div className="p-6 space-y-6">
+       <div className="flex items-center">
+        <Button variant="ghost" size="icon" className="mr-2 text-white hover:bg-white/20 hover:text-white" onClick={onBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h3 className="font-headline font-semibold text-white uppercase">{task.title}</h3>
+      </div>
+       <div className="flex items-center justify-center">
+          <Icon className="h-16 w-16 text-white" />
+       </div>
+      <div className="space-y-4">
+        <div>
+            <Label htmlFor="time" className="text-white/80">Time</Label>
+            <Input 
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
+            />
+        </div>
+        <div>
+            <Label htmlFor="duration" className="text-white/80">Duration (minutes)</Label>
+            <Input 
+                id="duration"
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+                className="bg-white/20 text-white placeholder:text-white/70 border-white/30"
+            />
+        </div>
+      </div>
+      <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
+          <Plus className="h-5 w-5 mr-2" />
+          Add Task
+      </Button>
+    </div>
+  );
+}
 
 
-function CustomTaskView({ onBack }: { onBack: () => void }) {
+function CustomTaskView({ onBack, onClose }: { onBack: () => void, onClose: () => void }) {
   const [title, setTitle] = useState('');
   const { addTask } = useTasks();
 
@@ -95,8 +159,7 @@ function CustomTaskView({ onBack }: { onBack: () => void }) {
         completed: false,
       });
       setTitle('');
-      // Ideally, close the modal here. The DialogClose button can be used,
-      // or we can lift state up to control the dialog's open state.
+      onClose();
     }
   };
 
@@ -117,17 +180,15 @@ function CustomTaskView({ onBack }: { onBack: () => void }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-       <DialogClose asChild>
-        <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
-            <Plus className="h-5 w-5 mr-2" />
-            Add Custom Task
-        </Button>
-      </DialogClose>
+      <Button onClick={handleAddTask} className="w-full bg-white text-primary hover:bg-white/90">
+          <Plus className="h-5 w-5 mr-2" />
+          Add Custom Task
+      </Button>
     </div>
   );
 }
 
-function DefaultView({ onCustomClick }: { onCustomClick: () => void }) {
+function DefaultView({ onCustomClick, onDetailsClick }: { onCustomClick: () => void, onDetailsClick: (task: Partial<Task>) => void }) {
   const { addTask } = useTasks();
   
   const handleHealthTaskClick = (taskName: string, iconName: string) => {
@@ -169,24 +230,34 @@ function DefaultView({ onCustomClick }: { onCustomClick: () => void }) {
         </h3>
 
         <div className="space-y-2">
-          {healthTasks.map(({ icon: Icon, name, indicator }) => (
-            <DialogClose asChild key={name}>
-              <button
-                className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10"
-                onClick={() => handleHealthTaskClick(name, (Icon as any).displayName || 'Heart')}
-              >
-                <Icon />
-                <span className="flex-1 font-medium">{name}</span>
-                {indicator && (
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: indicator }}
-                  />
-                )}
-                <ChevronRight className="h-5 w-5 text-white/50" />
-              </button>
-            </DialogClose>
-          ))}
+          {healthTasks.map(({ icon: Icon, name, indicator }) => {
+            const iconName = (Icon as any).displayName || 'Heart';
+            return (
+              <DialogClose asChild key={name}>
+                <div className="flex w-full items-center gap-4 rounded-lg p-3 text-left transition-colors hover:bg-white/10">
+                  <button
+                    className="flex flex-1 items-center gap-4"
+                    onClick={() => handleHealthTaskClick(name, iconName)}
+                  >
+                    <Icon />
+                    <span className="flex-1 font-medium">{name}</span>
+                    {indicator && (
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: indicator }}
+                      />
+                    )}
+                  </button>
+                  <Button variant="ghost" size="icon" className="text-white/50 hover:bg-white/20 hover:text-white/80" onClick={(e) => {
+                    e.stopPropagation();
+                    onDetailsClick({ title: name, icon: iconName });
+                  }}>
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              </DialogClose>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -194,11 +265,33 @@ function DefaultView({ onCustomClick }: { onCustomClick: () => void }) {
 }
 
 export function AddTaskModal({ children }: { children: React.ReactNode }) {
-  const [view, setView] = useState<'default' | 'custom'>('default');
+  const [view, setView] = useState<'default' | 'custom' | 'details'>('default');
+  const [selectedTask, setSelectedTask] = useState<Partial<Task> | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleDetailsClick = (task: Partial<Task>) => {
+    setSelectedTask(task);
+    setView('details');
+  };
+
+  const handleBack = () => {
+    setView('default');
+    setSelectedTask(null);
+  }
+
+  const handleClose = () => {
+    setIsOpen(false);
+  }
 
   return (
-    <Dialog onOpenChange={() => setView('default')}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) {
+        setView('default');
+        setSelectedTask(null);
+      }
+    }}>
+      <DialogTrigger asChild onClick={() => setIsOpen(true)}>{children}</DialogTrigger>
       <DialogContent className="max-w-md w-full p-0 border-0 bg-gradient-to-br from-gradient-gold-start to-gradient-gold-end text-white">
         <DialogHeader className="flex flex-row items-center justify-between p-4 border-b border-white/20">
           <DialogTitle className="font-headline text-lg text-white">Add Task</DialogTitle>
@@ -214,8 +307,9 @@ export function AddTaskModal({ children }: { children: React.ReactNode }) {
           </div>
         </DialogHeader>
 
-        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} />}
-        {view === 'custom' && <CustomTaskView onBack={() => setView('default')} />}
+        {view === 'default' && <DefaultView onCustomClick={() => setView('custom')} onDetailsClick={handleDetailsClick} />}
+        {view === 'custom' && <CustomTaskView onBack={handleBack} onClose={handleClose} />}
+        {view === 'details' && selectedTask && <DetailsView task={selectedTask} onBack={handleBack} onClose={handleClose} />}
       </DialogContent>
     </Dialog>
   );

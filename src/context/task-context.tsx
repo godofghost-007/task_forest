@@ -11,6 +11,8 @@ export interface Task {
   streak: number;
   showPlay?: boolean;
   completed?: boolean;
+  time?: string;
+  duration?: number;
 }
 
 interface TaskContextType {
@@ -37,15 +39,18 @@ const initialTasks: Task[] = [
     streak: 4,
     subtitle: '10:00',
     completed: false,
+    time: '10:00',
   },
   {
     id: '3',
     icon: 'Leaf',
     title: 'MEDITATE',
     streak: 0,
-    subtitle: '9:00',
+    subtitle: '15 min',
     showPlay: true,
     completed: false,
+    time: '09:00',
+    duration: 15,
   },
   {
     id: '4',
@@ -76,8 +81,14 @@ const initialTasks: Task[] = [
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
-  const addTask = (task: Task) => {
-    setTasks((prevTasks) => [...prevTasks, { ...task, id: Date.now().toString(), completed: false }]);
+  const addTask = (task: Omit<Task, 'id' | 'completed' | 'streak'>) => {
+    const newTask: Task = {
+      ...task,
+      id: Date.now().toString(),
+      completed: false,
+      streak: 0,
+    };
+    setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
   const completeTask = (taskId: string) => {

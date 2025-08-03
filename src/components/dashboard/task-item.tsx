@@ -4,20 +4,12 @@ import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
 import { RunIcon } from '@/components/icons/run-icon';
 import { useMemo } from 'react';
+import type { Task } from '@/context/task-context';
+
 
 // A type guard to check if a key is a valid Lucide icon name
 function isLucideIcon(key: string): key is keyof typeof Icons {
   return key in Icons;
-}
-
-export interface Task {
-  id: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  streak: number;
-  showPlay?: boolean;
-  completed?: boolean;
 }
 
 interface TaskItemProps extends Task {
@@ -32,6 +24,7 @@ export function TaskItem({
   showPlay,
   completed,
   onComplete,
+  time,
 }: TaskItemProps) {
   const Icon = useMemo(() => {
     if (icon === 'RunIcon') {
@@ -88,7 +81,7 @@ export function TaskItem({
           />
           {title}
         </h3>
-        <p className="text-xs text-white/70">{subtitle}</p>
+        <p className="text-xs text-white/70">{time ? `${time} - ${subtitle}` : subtitle}</p>
       </div>
     </div>
   );
