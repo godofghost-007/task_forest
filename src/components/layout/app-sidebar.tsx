@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import {
   Home,
   TrendingUp,
@@ -89,14 +88,12 @@ export function AppSidebar() {
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
-                asChild
+                href={item.href}
                 isActive={pathname === item.href}
                 tooltip={item.label}
               >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
+                <item.icon />
+                <span>{item.label}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
