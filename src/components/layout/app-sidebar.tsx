@@ -90,25 +90,14 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Link
-                    href={item.href}
-                    data-active={pathname === item.href}
-                    className={cn(sidebarMenuButtonVariants({ variant: 'default', size: 'default' }))}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  align="center"
-                  hidden={state !== 'collapsed' || isMobile}
+                <Link
+                  href={item.href}
+                  data-active={pathname === item.href}
+                  className={cn(sidebarMenuButtonVariants({ variant: 'default', size: 'default' }))}
                 >
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
