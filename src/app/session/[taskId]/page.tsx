@@ -313,6 +313,8 @@ export default function TaskSessionPage() {
                             }
                           }}
                           loop 
+                          controls
+                          className='hidden'
                       />
                   </div>
               )}
@@ -323,3 +325,5 @@ export default function TaskSessionPage() {
     </AppLayout>
   );
 }
+
+    
