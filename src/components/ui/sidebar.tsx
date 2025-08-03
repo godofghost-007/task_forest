@@ -537,7 +537,7 @@ const sidebarMenuButtonVariants = cva(
 
 type SidebarMenuButtonProps = (
   | React.ComponentProps<"button">
-  | React.ComponentProps<typeof Link>
+  | (React.ComponentProps<typeof Link> & { href: string })
 ) & {
   isActive?: boolean
   tooltip?: string | React.ComponentProps<typeof TooltipContent>
@@ -758,6 +758,7 @@ export {
   SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
+  sidebarMenuButtonVariants,
   SidebarMenuItem,
   SidebarMenuSkeleton,
   SidebarMenuSub,

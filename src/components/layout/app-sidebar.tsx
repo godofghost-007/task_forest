@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   Home,
   TrendingUp,
@@ -21,11 +22,13 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarTrigger,
+  sidebarMenuButtonVariants,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -37,7 +40,7 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
 
   return (
     <Sidebar>
@@ -87,14 +90,25 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                href={item.href}
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <item.icon />
-                <span>{item.label}</span>
-              </SidebarMenuButton>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={item.href}
+                    data-active={pathname === item.href}
+                    className={cn(sidebarMenuButtonVariants({ variant: 'default', size: 'default' }))}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  align="center"
+                  hidden={state !== 'collapsed' || isMobile}
+                >
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
