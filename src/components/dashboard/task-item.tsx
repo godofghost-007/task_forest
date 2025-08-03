@@ -1,5 +1,5 @@
 'use client';
-import { Heart, Play } from 'lucide-react';
+import { Check, Heart, HelpCircle, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
 import { RunIcon } from '@/components/icons/run-icon';
@@ -11,14 +11,28 @@ function isLucideIcon(key: string): key is keyof typeof Icons {
 }
 
 export interface Task {
+  id: string;
   icon: string;
   title: string;
   subtitle: string;
   streak: number;
   showPlay?: boolean;
+  completed?: boolean;
 }
 
-export function TaskItem({ icon, title, subtitle, streak, showPlay }: Task) {
+interface TaskItemProps extends Task {
+  onComplete: () => void;
+}
+
+export function TaskItem({
+  icon,
+  title,
+  subtitle,
+  streak,
+  showPlay,
+  completed,
+  onComplete,
+}: TaskItemProps) {
   const Icon = useMemo(() => {
     if (icon === 'RunIcon') {
       return RunIcon;
@@ -26,32 +40,52 @@ export function TaskItem({ icon, title, subtitle, streak, showPlay }: Task) {
     if (isLucideIcon(icon)) {
       return Icons[icon];
     }
-    return Icons.HelpCircle; // Fallback icon
+    return HelpCircle; // Fallback icon
   }, [icon]);
-  
+
   return (
-    <div className="group flex flex-col items-center gap-3 transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95">
+    <div
+      className="group flex cursor-pointer flex-col items-center gap-3 transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+      onClick={onComplete}
+    >
       <div
         className={cn(
           'relative flex h-32 w-32 items-center justify-center rounded-full bg-white p-4 shadow-lg',
-          'md:h-36 md:w-36'
+          'md:h-36 md:w-36',
+          completed && 'bg-green-100'
         )}
       >
-        <Icon className="h-12 w-12 text-gray-700" />
-        {streak > 0 && (
+        <Icon
+          className={cn(
+            'h-12 w-12 text-gray-700',
+            completed && 'text-green-600'
+          )}
+        />
+        {streak > 0 && !completed && (
           <div className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-red-500 text-xs font-bold text-white">
             {streak}
           </div>
         )}
-        {showPlay && (
+        {showPlay && !completed && (
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
             <Play className="h-10 w-10 text-white" fill="white" />
+          </div>
+        )}
+        {completed && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-green-500/80">
+            <Check className="h-16 w-16 text-white" />
           </div>
         )}
       </div>
       <div className="text-center">
         <h3 className="flex items-center gap-2 font-headline text-sm font-semibold text-white">
-          <Heart className="h-4 w-4 text-red-400" fill="currentColor" />
+          <Heart
+            className={cn(
+              'h-4 w-4 text-red-400',
+              completed && 'text-green-400'
+            )}
+            fill="currentColor"
+          />
           {title}
         </h3>
         <p className="text-xs text-white/70">{subtitle}</p>
